@@ -4,6 +4,7 @@ import json
 import gzip
 import csv
 import sys
+import os
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -34,6 +35,7 @@ from norway_company_agent.sourcepacks import ReferencePack  # noqa: E402
 from norway_company_agent.connectors.nav_jobs import populate_jobs  # noqa: E402
 from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
 from norway_company_agent.state_store import diff_and_store, open_store  # noqa: E402
+from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # noqa: E402
 
 
 class EvidenceTests(unittest.TestCase):
@@ -856,6 +858,77 @@ class StateStoreTests(unittest.TestCase):
         result = diff_and_store(conn, "923609016", [], checked_but_gone)
         self.assertEqual(len(result["changes"]), 1)
         self.assertEqual(result["changes"][0]["change_type"], "removed_value")
+
+
+class SummarizeTests(unittest.TestCase):
+    def claim(self, field, subkey, value, unit=None, reporting_period=None, availability="available"):
+        return {
+            "claim_id": f"{field}:{subkey}", "field": field, "subkey": subkey, "value": value, "unit": unit,
+            "reporting_period": reporting_period, "availability": availability, "confidence": 1.0,
+            "method": "test", "evidence_ids": ["ev-1"], "first_seen": "x", "last_seen": "x",
+        }
+
+    def test_summary_only_uses_available_claims_and_names_every_gap(self):
+        claims = [
+            self.claim("legal_identity", None, {"name": "Example AS", "legal_form": "AS"}),
+            self.claim("industry", None, {"code": "62.010", "label": "Computer programming"}),
+            self.claim("employees", None, 12),
+            self.claim("annual_accounts", "1:revenue", 5_000_000, unit="NOK", reporting_period={"from": "2025-01-01", "to": "2025-12-31"}),
+            self.claim("roles", "DAGL:0", {"name": "Kari Nordmann", "role": "Daglig leder", "role_code": "DAGL"}),
+        ]
+        availability = {family: {"state": "available", "reason": "found", "checked_at": "x"} for family in FIELD_FAMILIES}
+        for gap_family in ("official_website", "job_postings", "credentials_and_approvals"):
+            availability[gap_family] = {"state": "not_available", "reason": "x", "checked_at": "x"}
+        summary = build_summary("923609016", claims, availability, [])
+        self.assertIn("Example AS", summary["text"])
+        self.assertIn("computer programming", summary["text"])
+        self.assertIn("Kari Nordmann", summary["text"])
+        self.assertIn("5 000 000 NOK", summary["text"])
+        self.assertEqual(summary["generator"], "deterministic_v1")
+        self.assertIn("official website", summary["not_found"])
+        self.assertIn("hiring activity", summary["not_found"])
+
+    def test_summary_never_fabricates_a_field_with_no_claim(self):
+        availability = {family: {"state": "not_available", "reason": "x", "checked_at": "x"} for family in FIELD_FAMILIES}
+        summary = build_summary("923609016", [], availability, [])
+        self.assertNotIn("None", summary["text"])
+        self.assertEqual(summary["not_found"], summary["not_found"])  # every family listed as a gap
+        self.assertEqual(len(summary["not_found"]), len(FIELD_FAMILIES))
+
+    def test_deferred_changes_are_excluded_from_the_changed_sentence(self):
+        availability = {family: {"state": "available", "reason": "x", "checked_at": "x"} for family in FIELD_FAMILIES}
+        changes = [{"field": "official_website", "change_type": "deferred", "subkey": None}]
+        summary = build_summary("923609016", [], availability, changes)
+        self.assertNotIn("Changed since", summary["text"])
+        self.assertEqual(summary["changed_fields"], [])
+
+    def test_llm_rewrite_falls_back_when_it_alters_a_number(self):
+        deterministic = {"text": "Example AS reports 12 employees.", "not_found": [], "changed_fields": [], "generator": "deterministic_v1"}
+        with patch.dict(os.environ, {"SIGNALPOST_LLM_API_KEY": "test-key"}):
+            with patch("norway_company_agent.summarize.urllib.request.urlopen") as mocked:
+                mocked.return_value.__enter__.return_value.read.return_value = json.dumps(
+                    {"choices": [{"message": {"content": "Example AS reports 99 employees."}}]}
+                ).encode()
+                result = maybe_llm_rewrite(deterministic)
+        self.assertEqual(result["generator"], "deterministic_v1")
+        self.assertEqual(result["text"], deterministic["text"])
+
+    def test_llm_rewrite_accepted_when_it_preserves_every_number(self):
+        deterministic = {"text": "Example AS reports 12 employees.", "not_found": [], "changed_fields": [], "generator": "deterministic_v1"}
+        with patch.dict(os.environ, {"SIGNALPOST_LLM_API_KEY": "test-key"}):
+            with patch("norway_company_agent.summarize.urllib.request.urlopen") as mocked:
+                mocked.return_value.__enter__.return_value.read.return_value = json.dumps(
+                    {"choices": [{"message": {"content": "Example AS has 12 people on staff."}}]}
+                ).encode()
+                result = maybe_llm_rewrite(deterministic)
+        self.assertEqual(result["generator"], "llm_grounded_v1")
+        self.assertIn("12 people", result["text"])
+
+    def test_no_key_never_calls_the_network(self):
+        deterministic = {"text": "Example AS reports 12 employees.", "not_found": [], "changed_fields": [], "generator": "deterministic_v1"}
+        with patch.dict(os.environ, {}, clear=True):
+            result = maybe_llm_rewrite(deterministic)
+        self.assertEqual(result, deterministic)
 
 
 if __name__ == "__main__":

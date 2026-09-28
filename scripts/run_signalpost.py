@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import threading
@@ -30,6 +31,7 @@ from norway_company_agent.sourcepacks import build_entity_pack, build_reference_
 from norway_company_agent.connectors.nav_jobs import fetch_public_token, load_index_by_org, make_detail_fetcher, populate_jobs  # noqa: E402
 from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
 from norway_company_agent.state_store import diff_and_store, open_store, record_run  # noqa: E402
+from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # noqa: E402
 
 AGENT_VERSION = "1.0.0"
 
@@ -142,6 +144,8 @@ def main() -> None:
     parser.add_argument("--time-limit", type=float, default=2400.0, help="Seconds before remaining companies are marked budget_exhausted")
     parser.add_argument("--checkpoint-every", type=int, default=25)
     parser.add_argument("--nav-index", default="data/nav-jobs-index.jsonl.gz", help="Shipped NAV job-feed index (see scripts/build_nav_index.py)")
+    parser.add_argument("--no-llm", action="store_true", help="Force the deterministic summary even if SIGNALPOST_LLM_API_KEY is set")
+    parser.add_argument("--llm-max-cost-usd", type=float, default=3.0)
     parser.add_argument("--run-id", default=None)
     args = parser.parse_args()
 
@@ -194,6 +198,8 @@ def main() -> None:
     computed: dict[str, dict[str, Any]] = {}
     all_metrics: list[dict[str, Any]] = []
     cold_start_count = 0
+    llm_cost_spent = 0.0
+    llm_cost_per_call = 0.002  # conservative fixed estimate for a short small-model completion; real cost is $0 with no key set
     for org in unique_orgs:
         builder, terminal_status, metrics = pending[org]
         result = diff_and_store(state_conn, org, builder.claims, builder.availability)
@@ -201,10 +207,17 @@ def main() -> None:
             cold_start_count += 1
         for change in result["changes"]:
             builder.add_change(**change)
-        builder.set_summary({"refresh_baseline": result["baseline"]})
+        summary = build_summary(org, builder.claims, builder.availability, result["changes"])
+        if not args.no_llm and os.environ.get("SIGNALPOST_LLM_API_KEY") and llm_cost_spent < args.llm_max_cost_usd:
+            summary = maybe_llm_rewrite(summary, max_cost_usd=args.llm_max_cost_usd, spent_usd=llm_cost_spent)
+            if summary["generator"] == "llm_grounded_v1":
+                llm_cost_spent += llm_cost_per_call
+        summary["refresh_baseline"] = result["baseline"]
+        builder.set_summary(summary)
+        builder.add_operations(cost_usd=llm_cost_per_call if summary["generator"] == "llm_grounded_v1" else 0.0)
         computed[org] = builder.build(completed_at=utc_now(), terminal_status=terminal_status)
         all_metrics.append(metrics)
-    record_run(state_conn, run_id=run_id, started_at=started_at, completed_at=utc_now(), input_rows=len(rows), requests=budget.requests_spent, cost_usd=0.0)
+    record_run(state_conn, run_id=run_id, started_at=started_at, completed_at=utc_now(), input_rows=len(rows), requests=budget.requests_spent, cost_usd=llm_cost_spent)
     state_conn.close()
     print(f"[run_signalpost] refresh: {cold_start_count}/{len(unique_orgs)} cold start, {len(unique_orgs) - cold_start_count} incremental", file=sys.stderr)
 
@@ -240,7 +253,7 @@ def main() -> None:
             "bytes": sum(m["bytes"] for m in all_metrics),
             "p50_ms": p50,
             "p95_ms": p95,
-            "third_party_cost_usd": 0.0,
+            "third_party_cost_usd": llm_cost_spent,
         },
         "budget_exhausted": bool(degradations),
         "degradations": degradations,
