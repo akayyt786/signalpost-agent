@@ -27,6 +27,8 @@ from norway_company_agent.foundation import populate_foundation  # noqa: E402
 from norway_company_agent.input_batch import read_batch  # noqa: E402
 from norway_company_agent.site_resolver import populate_website  # noqa: E402
 from norway_company_agent.sourcepacks import build_entity_pack, build_reference_pack, build_update_pack  # noqa: E402
+from norway_company_agent.connectors.nav_jobs import fetch_public_token, load_index_by_org, make_detail_fetcher, populate_jobs  # noqa: E402
+from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
 
 AGENT_VERSION = "1.0.0"
 
@@ -76,6 +78,8 @@ def process_company(
     entity_pack,
     update_pack,
     reference_pack,
+    nav_index_by_org: dict[str, list[dict[str, Any]]],
+    nav_detail_fetcher,
     run_id: str,
     started_at: str,
     code_commit: str,
@@ -93,12 +97,14 @@ def process_company(
     outcome = populate_foundation(builder, org, entity_pack, update_pack)
     if outcome["identity_ok"]:
         populate_website(builder, org, outcome["entity"], reference_pack)
+        populate_jobs(builder, org, nav_index_by_org, detail_fetcher=nav_detail_fetcher)
+        populate_registries(builder, org, reference_pack)
     else:
         for family in ("official_website", "site_description", "social_profiles", "contact_points"):
             builder.set_availability(family, "failed", "identity_check_failed")
-    # Extension point: steps 6-7/9/10 (NAV jobs, registries/references, refresh diff, synthesis)
-    # attach more claims to `builder` here once implemented, gated on `outcome["identity_ok"]` so a
-    # failed identity never reaches an external-lookup layer.
+    # Extension point: step 9/10 (refresh diff, synthesis) attach more claims to `builder` here
+    # once implemented, gated on `outcome["identity_ok"]` so a failed identity never reaches an
+    # external-lookup layer.
     if not outcome["identity_ok"]:
         for family in ("job_postings", "public_activity", "credentials_and_approvals", "external_references"):
             builder.set_availability(family, "failed", "identity_check_failed")
@@ -132,6 +138,7 @@ def main() -> None:
     parser.add_argument("--max-requests", type=int, default=6000)
     parser.add_argument("--time-limit", type=float, default=2400.0, help="Seconds before remaining companies are marked budget_exhausted")
     parser.add_argument("--checkpoint-every", type=int, default=25)
+    parser.add_argument("--nav-index", default="data/nav-jobs-index.jsonl.gz", help="Shipped NAV job-feed index (see scripts/build_nav_index.py)")
     parser.add_argument("--run-id", default=None)
     args = parser.parse_args()
 
@@ -152,6 +159,11 @@ def main() -> None:
     reference_pack = build_reference_pack(cache_dir)
     print(f"[run_signalpost] entity pack: {len(entity_pack.index)}/{len(unique_orgs)} found in bulk, {update_pack.pages_fetched} update pages, {len(update_pack.changed)} changed since snapshot, {len(reference_pack.wikidata)} wikidata refs, {len(reference_pack.dibk)} dibk refs", file=sys.stderr)
 
+    nav_index_by_org = load_index_by_org(args.nav_index)
+    nav_token = fetch_public_token()
+    nav_detail_fetcher = make_detail_fetcher(nav_token)
+    print(f"[run_signalpost] nav jobs index: {len(nav_index_by_org)} organisations indexed, public token {'acquired' if nav_token else 'unavailable'}", file=sys.stderr)
+
     budget = Budget(max_requests=args.max_requests, time_limit_s=args.time_limit)
     computed: dict[str, dict[str, Any]] = {}
     all_metrics: list[dict[str, Any]] = []
@@ -159,7 +171,7 @@ def main() -> None:
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futures = {
-            pool.submit(process_company, org, entity_pack=entity_pack, update_pack=update_pack, reference_pack=reference_pack, run_id=run_id, started_at=started_at, code_commit=code_commit, budget=budget): org
+            pool.submit(process_company, org, entity_pack=entity_pack, update_pack=update_pack, reference_pack=reference_pack, nav_index_by_org=nav_index_by_org, nav_detail_fetcher=nav_detail_fetcher, run_id=run_id, started_at=started_at, code_commit=code_commit, budget=budget): org
             for org in unique_orgs
         }
         completed_count = 0

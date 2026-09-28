@@ -31,6 +31,8 @@ from norway_company_agent.envelope import FIELD_FAMILIES, EnvelopeBuilder  # noq
 from norway_company_agent.identity import classify_publication_verdict  # noqa: E402
 from norway_company_agent.site_resolver import build_candidates, populate_website  # noqa: E402
 from norway_company_agent.sourcepacks import ReferencePack  # noqa: E402
+from norway_company_agent.connectors.nav_jobs import populate_jobs  # noqa: E402
+from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
 
 
 class EvidenceTests(unittest.TestCase):
@@ -712,6 +714,89 @@ class SiteResolverTests(unittest.TestCase):
         self.assertEqual(envelope["availability"]["official_website"]["state"], "not_available")
         self.assertEqual(envelope["availability"]["official_website"]["reason"], "foreign_org_number_on_page")
         self.assertFalse([c for c in envelope["claims"] if c["field"] == "official_website"])
+
+
+class NavJobsTests(unittest.TestCase):
+    def make_builder(self):
+        return EnvelopeBuilder("923609016", run_id="t", started_at="2026-09-28T00:00:00Z", agent_version="1.0.0", code_commit="x")
+
+    def test_no_indexed_ads_is_not_available_not_a_crash(self):
+        builder = self.make_builder()
+        populate_jobs(builder, "923609016", {}, detail_fetcher=lambda url: None)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["job_postings"]["state"], "not_available")
+        self.assertEqual(envelope["availability"]["job_postings"]["reason"], "no_active_ads_in_nav_feed")
+
+    def test_active_matching_ad_is_published_without_contact_list(self):
+        index = {"923609016": [{"ad_uuid": "u1", "detail_url": "/api/v1/feedentry/u1", "sist_endret": "2026-09-01T00:00:00Z", "municipal": "OSLO"}]}
+
+        def fetch(url):
+            return {"status": "ACTIVE", "ad_content": {
+                "title": "Elektriker", "published": "2026-09-01T00:00:00Z", "expires": "2099-01-01T00:00:00Z",
+                "link": "https://arbeidsplassen.nav.no/stillinger/123", "employer": {"orgnr": "923609016", "name": "Example AS"},
+                "contactList": [{"name": "Should Never Appear", "email": "hidden@example.no"}],
+            }}
+        builder = self.make_builder()
+        populate_jobs(builder, "923609016", index, detail_fetcher=fetch)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["job_postings"]["state"], "available")
+        claim = [c for c in envelope["claims"] if c["field"] == "job_postings"][0]
+        self.assertEqual(claim["value"]["title"], "Elektriker")
+        self.assertNotIn("contactList", json.dumps(envelope))
+        self.assertNotIn("hidden@example.no", json.dumps(envelope))
+
+    def test_ad_gone_inactive_since_index_was_built_is_excluded_not_published(self):
+        index = {"923609016": [{"ad_uuid": "u1", "detail_url": "/api/v1/feedentry/u1", "sist_endret": "2026-09-01T00:00:00Z"}]}
+        builder = self.make_builder()
+        populate_jobs(builder, "923609016", index, detail_fetcher=lambda url: {"status": "INACTIVE"})
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["job_postings"]["state"], "not_available")
+        self.assertEqual(envelope["availability"]["job_postings"]["reason"], "indexed_ads_no_longer_active")
+        self.assertFalse([c for c in envelope["claims"] if c["field"] == "job_postings"])
+
+    def test_expired_ad_is_excluded_even_if_still_marked_active(self):
+        index = {"923609016": [{"ad_uuid": "u1", "detail_url": "/api/v1/feedentry/u1", "sist_endret": "2020-01-01T00:00:00Z"}]}
+        builder = self.make_builder()
+        populate_jobs(builder, "923609016", index, detail_fetcher=lambda url: {"status": "ACTIVE", "ad_content": {"expires": "2020-01-02T00:00:00Z", "employer": {"orgnr": "923609016"}}})
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertFalse([c for c in envelope["claims"] if c["field"] == "job_postings"])
+
+    def test_failed_detail_refetch_is_deferred_not_a_false_removal(self):
+        index = {"923609016": [{"ad_uuid": "u1", "detail_url": "/api/v1/feedentry/u1", "sist_endret": "2026-09-01T00:00:00Z"}]}
+        builder = self.make_builder()
+        populate_jobs(builder, "923609016", index, detail_fetcher=lambda url: None)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["job_postings"]["reason"], "detail_refetch_failed")
+
+
+class RegistriesTests(unittest.TestCase):
+    def make_builder(self):
+        return EnvelopeBuilder("923609016", run_id="t", started_at="2026-09-28T00:00:00Z", agent_version="1.0.0", code_commit="x")
+
+    def test_dibk_approval_published_when_present(self):
+        rp = ReferencePack(dibk={"923609016": {"status": {"approved": True, "approval_period_to": "2028-01-01", "approval_certificate": "https://dibk.example/cert.pdf"}}})
+        builder = self.make_builder()
+        populate_registries(builder, "923609016", rp)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["credentials_and_approvals"]["state"], "available")
+        claim = [c for c in envelope["claims"] if c["field"] == "credentials_and_approvals"][0]
+        self.assertTrue(claim["value"]["approved"])
+
+    def test_dibk_absent_is_not_available_not_a_crash(self):
+        builder = self.make_builder()
+        populate_registries(builder, "923609016", ReferencePack())
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["credentials_and_approvals"]["state"], "not_available")
+        self.assertEqual(envelope["availability"]["credentials_and_approvals"]["reason"], "not_in_dibk_central_approval_register")
+
+    def test_wikidata_website_is_never_published_as_an_external_reference(self):
+        rp = ReferencePack(wikidata={"923609016": {"websites": ["https://example.no"], "wikipedia_article": "https://en.wikipedia.org/wiki/Example", "social": {"linkedin": "example"}}})
+        builder = self.make_builder()
+        populate_registries(builder, "923609016", rp)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        fields = {(c["subkey"]) for c in envelope["claims"] if c["field"] == "external_references"}
+        self.assertEqual(fields, {"wikipedia_article", "social:linkedin"})
+        self.assertNotIn("https://example.no", json.dumps(envelope["claims"]))
 
 
 if __name__ == "__main__":
