@@ -1,0 +1,13 @@
+{
+  "total_envelopes": 1000,
+  "terminal_status": {
+    "completed": 962,
+    "partial": 38
+  },
+  "per_family_degradation_counts": {
+    "website_layer_skipped": 59,
+    "group_structure_skipped": 163,
+    "procurement_skipped": 163,
+    "fully_budget_exhausted": 38
+  }
+}

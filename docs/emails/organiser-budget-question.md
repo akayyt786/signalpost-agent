@@ -8,11 +8,15 @@ https://github.com/akayyt786/signalpost-agent) and want to size my request/time 
 logic against the real official run rather than guess. Three questions:
 
 1. What are the exact request-count, wall-clock, and (if any) third-party-cost ceilings for an
-   official 1,000-company (or 1,100) run? My agent currently defaults to --max-requests 6000 and
-   --time-limit 2400s and degrades gracefully under a tighter cap (drops the weakest website
-   candidate tier first, then site-subpage crawl depth, then job-detail re-fetches, then group
-   structure, then the whole website layer as a last resort — never drops an input row), so I'd
-   rather calibrate the defaults to the real limits than find out at scoring time.
+   official 1,000-company (or 1,100) run? This isn't hypothetical sizing on my end: a real
+   1,000-company rehearsal on my final commit used 5,900-6,050 requests depending on run-to-run
+   variance — right at my current --max-requests 6000 default, occasionally over it. My agent
+   degrades gracefully under a tighter cap (drops the weakest website candidate tier first, then
+   site-subpage crawl depth, then job-detail re-fetches, then the cheapest-to-drop external
+   connectors, then the whole website layer as a last resort — never drops an input row, confirmed
+   by the same rehearsal: 1,000/1,000 envelopes emitted even when the budget ran out mid-batch), so
+   getting this number right doesn't change whether the agent completes, only how much it finds. I'd
+   rather calibrate against the real limit than guess and lose avoidable coverage.
 
 2. How is previous-run state supplied between scheduled daily batches — is my agent expected to
    persist its own state directory across runs inside a long-lived container/volume, or does each

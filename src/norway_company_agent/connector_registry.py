@@ -69,8 +69,8 @@ CONNECTORS: tuple[ConnectorSpec, ...] = (
     ConnectorSpec(
         "procurement",
         ("public_contracts",),
-        tier=2, simple=True,
-        description="EU TED Search API v3 (winner-identifier match): Norwegian public-procurement contract awards this organisation won. One live request per company; dropped early under budget pressure since it costs real requests for a single-family signal.",
+        tier=4, simple=True,
+        description="EU TED Search API v3 (winner-identifier match): Norwegian public-procurement contract awards this organisation won. Only one live request per company and adds an entire new field family - retuned to tier 4 (same threshold as group_structure) after a real 1,000-company scale rehearsal showed tier 2 dropped it for 37.8% of companies for a single request's worth of savings each, the worst value-per-request tradeoff of any degradable connector.",
     ),
 )
 

@@ -1,0 +1,37 @@
+{
+  "run_id": "scale-rehearsal-1000-final",
+  "started_at": "2026-09-28T13:48:54.573354Z",
+  "completed_at": "2026-09-28T14:00:23.968844Z",
+  "input_rows": 1000,
+  "unique_companies": 1000,
+  "emitted_envelopes": 1000,
+  "registry_snapshot": {
+    "url": "https://data.brreg.no/enhetsregisteret/api/enheter/lastned/csv",
+    "etag": "e9fda929ba48e3d2383338106fcb91d1",
+    "last_modified": "Mon Sep 28 04:27:29 CEST 2026",
+    "downloaded_at": "2026-09-28T08:42:36.977809Z",
+    "sha256": "c0df09c3fbd654e61a0962043e87a5daed8e5b7093be297cc63afb81e2239deb"
+  },
+  "operations": {
+    "requests": 6043,
+    "bytes": 92371945,
+    "p50_ms": 6059,
+    "p95_ms": 19141,
+    "third_party_cost_usd": 0.0
+  },
+  "budget_exhausted": true,
+  "degradations": [
+    "name_guess_disabled",
+    "site_subpages_capped",
+    "job_detail_refetch_capped",
+    "group_structure_skipped",
+    "procurement_skipped",
+    "website_layer_skipped",
+    "budget_exhausted"
+  ],
+  "validation": {
+    "passed": true,
+    "expected_count": 1000,
+    "emitted_count": 1000
+  }
+}
