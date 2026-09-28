@@ -66,6 +66,12 @@ CONNECTORS: tuple[ConnectorSpec, ...] = (
         tier=TIER_NEVER_DROP, simple=True,
         description="DIBK central-approval register + Wikidata external references. Already-fetched data, zero new requests - never worth degrading for budget.",
     ),
+    ConnectorSpec(
+        "procurement",
+        ("public_contracts",),
+        tier=2, simple=True,
+        description="EU TED Search API v3 (winner-identifier match): Norwegian public-procurement contract awards this organisation won. One live request per company; dropped early under budget pressure since it costs real requests for a single-family signal.",
+    ),
 )
 
 

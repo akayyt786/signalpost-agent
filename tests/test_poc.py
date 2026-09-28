@@ -33,6 +33,7 @@ from norway_company_agent.identity import classify_publication_verdict  # noqa: 
 from norway_company_agent.site_resolver import build_candidates, populate_website  # noqa: E402
 from norway_company_agent.sourcepacks import ReferencePack  # noqa: E402
 from norway_company_agent.connectors.nav_jobs import populate_jobs  # noqa: E402
+from norway_company_agent.connectors.procurement import populate_procurement  # noqa: E402
 from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
 from norway_company_agent.state_store import diff_and_store, open_store  # noqa: E402
 from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # noqa: E402
@@ -823,6 +824,62 @@ class RegistriesTests(unittest.TestCase):
         self.assertNotIn("https://example.no", json.dumps(envelope["claims"]))
 
 
+class ProcurementTests(unittest.TestCase):
+    def make_builder(self):
+        return EnvelopeBuilder("923609016", run_id="t", started_at="2026-09-28T00:00:00Z", agent_version="1.0.0", code_commit="x")
+
+    def test_publishes_won_contracts_from_ted(self):
+        response = {"notices": [{
+            "publication-number": "673538-2023", "buyer-name": {"eng": ["Some Kommune"]},
+            "winner-identifier": ["923609016"], "organisation-identifier-buyer": ["986252932"],
+            "notice-type": "can-standard", "publication-date": "2023-11-06Z",
+            "notice-title": {"eng": ["Security services"]},
+            "links": {"html": {"ENG": "https://ted.europa.eu/en/notice/-/detail/673538-2023"}},
+        }]}
+        fake_poster = lambda url, body: (response, 1, 500, None)  # noqa: E731
+        builder = self.make_builder()
+        populate_procurement(builder, "923609016", {}, None, poster=fake_poster)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["public_contracts"]["state"], "available")
+        claim = [c for c in envelope["claims"] if c["field"] == "public_contracts"][0]
+        self.assertEqual(claim["value"]["buyer_name"], "Some Kommune")
+        self.assertEqual(claim["value"]["notice_title"], "Security services")
+        self.assertEqual(claim["subkey"], "673538-2023")
+
+    def test_never_publishes_a_winner_name_from_a_misaligned_array(self):
+        # Real observed TED shape: winner-identifier and winner-name arrays are not guaranteed to
+        # be the same length on multi-winner framework agreements - publishing winner-name[i] as
+        # "this org's name" would risk attributing a co-winner's name to the wrong company.
+        response = {"notices": [{
+            "publication-number": "591198-2024", "buyer-name": {"eng": ["Baerum Kommune"]},
+            "winner-identifier": ["1", "2", "923609016", "4"], "winner-name": {"eng": ["A AS", "B AS"]},
+            "organisation-identifier-buyer": ["935478715"], "notice-type": "can-standard",
+            "publication-date": "2024-10-02Z", "links": {},
+        }]}
+        fake_poster = lambda url, body: (response, 1, 500, None)  # noqa: E731
+        builder = self.make_builder()
+        populate_procurement(builder, "923609016", {}, None, poster=fake_poster)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        claim = [c for c in envelope["claims"] if c["field"] == "public_contracts"][0]
+        self.assertNotIn("winner_name", claim["value"])
+        self.assertNotIn("A AS", json.dumps(claim["value"]))
+
+    def test_no_won_contracts_is_not_available_not_failed(self):
+        fake_poster = lambda url, body: ({"notices": []}, 1, 50, None)  # noqa: E731
+        builder = self.make_builder()
+        populate_procurement(builder, "923609016", {}, None, poster=fake_poster)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["public_contracts"]["state"], "not_available")
+        self.assertEqual(envelope["availability"]["public_contracts"]["reason"], "no_won_notices_in_ted")
+
+    def test_api_error_is_failed_not_not_available(self):
+        fake_poster = lambda url, body: (None, 3, 0, "TimeoutError")  # noqa: E731
+        builder = self.make_builder()
+        populate_procurement(builder, "923609016", {}, None, poster=fake_poster)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["public_contracts"]["state"], "failed")
+
+
 class StateStoreTests(unittest.TestCase):
     def make_claim(self, field, subkey, value, availability="available", evidence_ids=("ev-1",)):
         return {
@@ -1124,9 +1181,11 @@ class ProcessCompanyDegradeLadderTests(unittest.TestCase):
 
 
 class ConnectorRegistryTests(unittest.TestCase):
-    def test_field_families_matches_the_known_17_family_vocabulary(self):
+    def test_field_families_matches_envelope_pys_exported_constant(self):
+        # Deliberately no hardcoded count: the whole point of this registry is that adding a
+        # connector grows the vocabulary without anyone needing to update a magic number here.
         self.assertEqual(set(field_families()), set(FIELD_FAMILIES))
-        self.assertEqual(len(field_families()), 17)
+        self.assertGreaterEqual(len(field_families()), 17)  # never fewer than the shipped baseline
 
     def test_simple_connectors_are_ordered_lowest_tier_first(self):
         ordered = simple_connectors_by_tier()

@@ -55,18 +55,25 @@ For each organisation number, in order:
 4. **Credentials and external references** (`src/norway_company_agent/connectors/registries.py`) —
    DIBK central-approval status and Wikidata's orgnr-linked external references (Wikipedia, logo,
    social handles), both already orgnr-keyed so there is no identity risk.
-5. **Synthesis** (`src/norway_company_agent/summarize.py`) — a deterministic summary built only from
+5. **Public-procurement contract awards** (`src/norway_company_agent/connectors/procurement.py`) —
+   from the EU's TED Search API v3, publishing a claim only when the organisation number appears
+   verbatim in a notice's structured `winner-identifier` field — never a name match, and never a
+   winner name extracted from TED (its `winner-name`/`winner-identifier` arrays are not guaranteed
+   to be the same length on multi-winner notices, so there is no safe way to attribute a name).
+6. **Synthesis** (`src/norway_company_agent/summarize.py`) — a deterministic summary built only from
    published claims, always shipped. An optional grounded LLM rewrite runs only when
    `SIGNALPOST_LLM_API_KEY` is set, and its output is discarded unless a validator confirms every
    number, date, name and URL it uses appears verbatim in the claim set.
 
-Every one of the 17 field families (`legal_identity`, `registered_address`, `industry`, `employees`,
+Every field family — `legal_identity`, `registered_address`, `industry`, `employees`,
 `status_flags`, `annual_accounts`, `roles`, `group_structure`, `locations`, `official_website`,
 `site_description`, `social_profiles`, `contact_points`, `job_postings`, `public_activity`,
-`credentials_and_approvals`, `external_references`) appears in every envelope's `availability` map
-with one of `available`, `not_available`, `blocked`, `not_applicable`, `ambiguous`, `failed` and a
-machine-readable reason — a checked source with nothing to report is never confused with a source
-never reached, and absence is never rendered as zero.
+`credentials_and_approvals`, `external_references`, `public_contracts` (18 as of this commit,
+derived automatically from `connector_registry.py` — adding a connector extends this list, the
+verification site's coverage barcode, and the local scorer with zero other edits) — appears in
+every envelope's `availability` map with one of `available`, `not_available`, `blocked`,
+`not_applicable`, `ambiguous`, `failed` and a machine-readable reason — a checked source with
+nothing to report is never confused with a source never reached, and absence is never rendered as zero.
 
 Envelope shape: see `OUTPUT_CONTRACT.md` for a minimal example and
 `src/norway_company_agent/envelope.py` for the full Pydantic model.
@@ -132,9 +139,10 @@ every published claim's evidence for hand review.
 
 Official Brønnøysund registry data (NLOD 2.0), NAV's public job-ad feed (terms:
 `https://arbeidsplassen.nav.no/vilkar-api`, public token fetched at run time — no personal
-credential required), DIBK's central-approval register, and Wikidata (CC0). See `CRAWLERS.md` for
-the full source ledger with exact endpoints and cadence, and `docs/norway-sources.md` for the wider
-Brønnøysund endpoint map.
+credential required), DIBK's central-approval register, Wikidata (CC0), and the EU's TED
+public-procurement notice service (freely reusable for commercial or non-commercial purposes, no
+auth). See `CRAWLERS.md` for the full source ledger with exact endpoints and cadence, and
+`docs/norway-sources.md` for the wider Brønnøysund endpoint map.
 
 LinkedIn, Meta, Glassdoor, Indeed and similar platforms whose terms prohibit the collection method
 used here are **not** implemented, by design — not stubbed, not quarantined behind a flag, simply

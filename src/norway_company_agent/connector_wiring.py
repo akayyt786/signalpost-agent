@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from .connector_registry import ConnectorSpec, simple_connectors_by_tier
+from .connectors.procurement import populate_procurement
 from .connectors.registries import populate_registries
 from .envelope import EnvelopeBuilder
 from .sourcepacks import ReferencePack
@@ -29,6 +30,7 @@ SimplePopulate = Callable[[EnvelopeBuilder, str, dict[str, Any], ReferencePack],
 # tests. New connectors should accept entity directly instead of needing a wrapper.
 SIMPLE_CONNECTOR_IMPLS: dict[str, SimplePopulate] = {
     "registries": lambda builder, org, entity, reference_pack: populate_registries(builder, org, reference_pack),
+    "procurement": populate_procurement,
 }
 
 

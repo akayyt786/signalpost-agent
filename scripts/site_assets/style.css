@@ -121,7 +121,7 @@ tbody td.name { font-family: inherit; font-size: 0.85rem; }
 tbody td a { color: var(--text); }
 tbody td a:hover { color: var(--ok); }
 
-/* Coverage barcode: 17 ticks, one per field family, the signature element */
+/* Coverage barcode: one tick per field family (grows automatically as connectors are added), the signature element */
 .barcode { display: inline-flex; gap: 2px; }
 .tick {
   width: 6px;
