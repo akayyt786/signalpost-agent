@@ -37,6 +37,8 @@ from norway_company_agent.connectors.registries import populate_registries  # no
 from norway_company_agent.state_store import diff_and_store, open_store  # noqa: E402
 from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # noqa: E402
 from scripts.build_site import render_company_page, render_index_row, render_not_found  # noqa: E402
+from scripts.score_local import score_precision_and_evidence, score_synthesis  # noqa: E402
+from select_entry_batch import write_splits  # noqa: E402
 
 
 class EvidenceTests(unittest.TestCase):
@@ -974,6 +976,70 @@ class BuildSiteTests(unittest.TestCase):
         html_out = render_company_page(envelope)
         self.assertNotIn("<script>alert(1)</script>", html_out)
         self.assertIn("&lt;script&gt;", html_out)
+
+
+class ScoreLocalTests(unittest.TestCase):
+    def claim(self, field, method, availability="available", evidence_ids=None):
+        return {
+            "claim_id": "c", "field": field, "subkey": None, "value": "x", "unit": None,
+            "reporting_period": None, "availability": availability, "confidence": 1.0,
+            "method": method, "evidence_ids": evidence_ids or [], "first_seen": "x", "last_seen": "x",
+        }
+
+    def envelope(self, org, claims, evidence=None):
+        return {"organisation_number": org, "claims": claims, "evidence": evidence or [],
+                "availability": {}, "summary": {"text": "x", "not_found": []}}
+
+    def test_downstream_site_claims_are_not_flagged_when_website_is_verified(self):
+        env = self.envelope("1", [
+            self.claim("official_website", "identity_gate_verified_v1:hjemmeside"),
+            self.claim("site_description", "site_meta_description_v1"),
+            self.claim("social_profiles", "site_outbound_link_identity_gated_v1"),
+        ])
+        result = score_precision_and_evidence([env])
+        self.assertEqual(result["wrong_company_publications"], [])
+        self.assertTrue(result["zero_wrong_company_publications"])
+
+    def test_site_derived_claim_is_flagged_without_a_verified_website_claim(self):
+        env = self.envelope("1", [self.claim("site_description", "site_meta_description_v1")])
+        result = score_precision_and_evidence([env])
+        self.assertEqual(len(result["wrong_company_publications"]), 1)
+        self.assertFalse(result["zero_wrong_company_publications"])
+
+    def test_evidence_completeness_requires_url_date_and_hash(self):
+        complete_ev = {"id": "e1", "source_url": "https://x.no", "retrieved_at": "t", "content_sha256": "h"}
+        incomplete_ev = {"id": "e2", "source_url": "https://x.no"}
+        env = self.envelope("1", [
+            self.claim("employees", "official_registry_v1", evidence_ids=["e1"]),
+            self.claim("industry", "official_registry_v1", evidence_ids=["e2"]),
+        ], evidence=[complete_ev, incomplete_ev])
+        result = score_precision_and_evidence([env])
+        self.assertEqual(result["evidence_completeness"], 0.5)
+
+    def test_synthesis_flags_gap_list_that_does_not_match_actual_gaps(self):
+        matching = {"organisation_number": "1", "summary": {"text": "hi", "not_found": ["A"]},
+                    "availability": {"industry": {"state": "not_available"}, "employees": {"state": "available"}}}
+        mismatched = {"organisation_number": "2", "summary": {"text": "hi", "not_found": []},
+                      "availability": {"industry": {"state": "not_available"}, "employees": {"state": "available"}}}
+        result = score_synthesis([matching, mismatched])
+        self.assertEqual(result["gap_list_self_consistency_rate"], 0.5)
+
+
+class SelectEntryBatchTests(unittest.TestCase):
+    def test_splits_are_non_overlapping_and_keep_same_host_together(self):
+        rows = [{"organisation_number": str(i), "website": "group.no" if i < 4 else None} for i in range(20)]
+        manifest = write_splits(rows, [("development", 10), ("validation", 5), ("final", 5)], seed=1, output_prefix=Path("/tmp/split-test/x"))
+        self.assertTrue(manifest["no_organisation_overlap"])
+        self.assertTrue(manifest["no_host_overlap"])
+        for name, info in manifest["splits"].items():
+            written = [json.loads(line) for line in (Path(f"/tmp/split-test/x-{name}.jsonl")).read_text().splitlines()]
+            self.assertEqual(len(written), info["written"])
+
+    def test_split_assignment_is_deterministic_for_a_fixed_seed(self):
+        rows = [{"organisation_number": str(i), "website": None} for i in range(20)]
+        write_splits(rows, [("a", 10), ("b", 10)], seed=7, output_prefix=Path("/tmp/split-test/first"))
+        write_splits(rows, [("a", 10), ("b", 10)], seed=7, output_prefix=Path("/tmp/split-test/second"))
+        self.assertEqual(Path("/tmp/split-test/first-a.jsonl").read_text(), Path("/tmp/split-test/second-a.jsonl").read_text())
 
 
 if __name__ == "__main__":
