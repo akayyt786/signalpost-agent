@@ -125,6 +125,26 @@ def _digit_windows(text: str, *, min_run: int = 9) -> set[str]:
     return windows
 
 
+def _span_around_digit_match(text: str, target_digits: str, *, window: int = 150) -> str:
+    """A human-readable excerpt centered on where `target_digits` actually occurs in `text`
+    (ignoring interleaved separators like spaces), not the first `window*2` characters of `text`.
+
+    Long pages routinely put hundreds of characters of navigation/menu boilerplate before the
+    actual organisation-number line; slicing from the start produced junk "evidence" that never
+    showed the match it was supposed to prove, even though the underlying verdict was correct.
+    """
+    digit_positions = [i for i, ch in enumerate(text) if ch.isdigit()]
+    compact = "".join(text[i] for i in digit_positions)
+    match_at = compact.find(target_digits)
+    if match_at == -1 or not digit_positions:
+        return text[:window * 2]
+    match_start = digit_positions[match_at]
+    match_end = digit_positions[match_at + len(target_digits) - 1] + 1
+    start = max(0, match_start - window)
+    end = min(len(text), match_end + window)
+    return text[start:end]
+
+
 def assess_social_identity(profile: dict[str, Any], link: dict[str, str]) -> dict[str, Any]:
     core = _tokens(profile.get("name"))
     parsed = urllib.parse.urlparse(link.get("url") or "")
@@ -219,7 +239,7 @@ def classify_publication_verdict(
 
     if org_digits in valid_found:
         span_source = next((text for text in [*homepage_identity_parts, *page_texts] if org_digits in re.sub(r"\D", "", str(text or ""))), "")
-        proof_span = str(span_source)[:300] if span_source else None
+        proof_span = _span_around_digit_match(str(span_source), org_digits) if span_source else None
         return {"verdict": "verified", "reason": "organisation_number_found_on_page", "proof_span": proof_span, "other_org_numbers": sorted(valid_found - {org_digits})}
 
     other_valid = sorted(valid_found - {org_digits})

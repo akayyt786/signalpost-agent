@@ -621,6 +621,21 @@ class PublicationVerdictTests(unittest.TestCase):
         self.assertEqual(verdict["verdict"], "verified")
         self.assertIn("923 609 016", verdict["proof_span"])
 
+    def test_proof_span_windows_around_the_match_not_the_start_of_a_long_page(self):
+        # NTNU-shaped regression: hundreds of characters of navigation boilerplate before the
+        # actual "Organisasjonsnummer" line. A [:300]-from-the-start slice would show only menu
+        # junk and never the digits that justified the "verified" verdict.
+        boilerplate = "MENY \n" + "\t" * 400
+        page_text = boilerplate + "Fakturaadresse\nOrganisasjonsnummer\n974 767 880"
+        verdict = classify_publication_verdict("974767880", "NTNU", {
+            "title": "NTNU", "final_url": "https://ntnu.no/",
+            "pages": [{"main_text_excerpt": page_text}],
+        })
+        self.assertEqual(verdict["verdict"], "verified")
+        self.assertIn("974 767 880", verdict["proof_span"])
+        self.assertIn("Organisasjonsnummer", verdict["proof_span"])
+        self.assertNotIn("MENY", verdict["proof_span"])
+
     def test_conflict_when_a_different_valid_organisation_number_is_present(self):
         verdict = classify_publication_verdict("810034882", "Sandnes Elektriske AS", {
             "title": "Regnskapsforer AS", "final_url": "https://regnskapsforer.no/",
