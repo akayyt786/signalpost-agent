@@ -38,6 +38,7 @@ from norway_company_agent.state_store import diff_and_store, open_store  # noqa:
 from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # noqa: E402
 from scripts.build_site import render_company_page, render_index_row, render_not_found  # noqa: E402
 from scripts.score_local import score_precision_and_evidence, score_synthesis  # noqa: E402
+from scripts.run_signalpost import Budget, process_company  # noqa: E402
 from select_entry_batch import write_splits  # noqa: E402
 
 
@@ -1041,6 +1042,68 @@ class SelectEntryBatchTests(unittest.TestCase):
         write_splits(rows, [("a", 10), ("b", 10)], seed=7, output_prefix=Path("/tmp/split-test/second"))
         self.assertEqual(Path("/tmp/split-test/first-a.jsonl").read_text(), Path("/tmp/split-test/second-a.jsonl").read_text())
 
+
+class BudgetPressureLevelTests(unittest.TestCase):
+    def budget_at(self, spent, max_requests=1000):
+        budget = Budget(max_requests=max_requests, time_limit_s=1_000_000.0)  # time never the limiting factor here
+        budget.spend(spent)
+        return budget
+
+    def test_pressure_level_thresholds_match_the_documented_ladder(self):
+        self.assertEqual(self.budget_at(0).pressure_level(), 0)
+        self.assertEqual(self.budget_at(549).pressure_level(), 0)
+        self.assertEqual(self.budget_at(550).pressure_level(), 1)   # name-guess disabled
+        self.assertEqual(self.budget_at(700).pressure_level(), 2)   # site subpages capped
+        self.assertEqual(self.budget_at(820).pressure_level(), 3)   # job detail re-fetch capped
+        self.assertEqual(self.budget_at(900).pressure_level(), 4)   # group structure skipped
+        self.assertEqual(self.budget_at(970).pressure_level(), 5)   # website layer skipped
+        self.assertEqual(self.budget_at(1000).pressure_level(), 5)
+
+    def test_wall_clock_pressure_also_escalates_the_level(self):
+        budget = Budget(max_requests=1_000_000, time_limit_s=0.0)  # instantly time-exhausted
+        self.assertEqual(budget.pressure_level(), 5)
+
+
+class ProcessCompanyDegradeLadderTests(unittest.TestCase):
+    def test_group_structure_and_website_layer_are_skipped_at_high_pressure(self):
+        budget = Budget(max_requests=100, time_limit_s=1_000_000.0)
+        budget.spend(96)  # 96% -> level 4, below the 97% website-layer threshold
+        with patch("scripts.run_signalpost.populate_foundation") as foundation, \
+             patch("scripts.run_signalpost.populate_website") as website, \
+             patch("scripts.run_signalpost.populate_jobs") as jobs, \
+             patch("scripts.run_signalpost.populate_registries"):
+            foundation.return_value = {"identity_ok": True, "entity": {}}
+            builder, terminal_status, metrics = process_company(
+                "923609016", entity_pack=None, update_pack=None, reference_pack=None,
+                nav_index_by_org={}, nav_detail_fetcher=None, run_id="t", started_at="t",
+                code_commit="t", budget=budget,
+            )
+        foundation.assert_called_once_with(builder, "923609016", None, None, skip_group_structure=True)
+        website.assert_called_once()  # level 4 < 5: website layer itself still runs
+        _, website_kwargs = website.call_args
+        self.assertFalse(website_kwargs["include_name_guess"])
+        self.assertEqual(website_kwargs["max_pages"], 1)
+        jobs.assert_called_once()
+        self.assertEqual(jobs.call_args.kwargs["max_ads"], 1)
+        self.assertIn("group_structure_skipped", metrics["degradations"])
+        self.assertNotIn("website_layer_skipped", metrics["degradations"])
+
+    def test_website_layer_is_skipped_entirely_at_maximum_pressure(self):
+        budget = Budget(max_requests=100, time_limit_s=1_000_000.0)
+        budget.spend(98)  # 98% -> level 5
+        with patch("scripts.run_signalpost.populate_foundation") as foundation, \
+             patch("scripts.run_signalpost.populate_website") as website, \
+             patch("scripts.run_signalpost.populate_jobs"), \
+             patch("scripts.run_signalpost.populate_registries"):
+            foundation.return_value = {"identity_ok": True, "entity": {}}
+            builder, terminal_status, metrics = process_company(
+                "923609016", entity_pack=None, update_pack=None, reference_pack=None,
+                nav_index_by_org={}, nav_detail_fetcher=None, run_id="t", started_at="t",
+                code_commit="t", budget=budget,
+            )
+        website.assert_not_called()
+        self.assertEqual(builder.build(completed_at="t", terminal_status="completed")["availability"]["official_website"]["reason"], "budget_degraded_website_layer_skipped")
+        self.assertIn("website_layer_skipped", metrics["degradations"])
 
 if __name__ == "__main__":
     unittest.main()

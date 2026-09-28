@@ -31,6 +31,7 @@ def populate_foundation(
     update_pack: UpdatePack,
     *,
     fetcher: Callable[[str], FetchResult] = fetch_json,
+    skip_group_structure: bool = False,
 ) -> dict[str, Any]:
     """Populate legal_identity, registered_address, industry, employees, status_flags, annual_accounts,
     roles, group_structure and locations. Returns {"identity_ok": bool, "entity": dict | None} so the
@@ -162,7 +163,8 @@ def populate_foundation(
     )
     builder.set_availability("status_flags", "available", "found", checked_at=now)
 
-    records, metrics = fetch_official_modules(org, {"financials", "roles", "group", "locations"}, fetcher=fetcher)
+    modules = {"financials", "roles", "locations"} | (set() if skip_group_structure else {"group"})
+    records, metrics = fetch_official_modules(org, modules, fetcher=fetcher)
     builder.add_operations(requests=len(metrics), bytes_=sum(m.bytes_received for m in metrics))
 
     financials = records.get("financials", {})
@@ -206,24 +208,27 @@ def populate_foundation(
         state, reason = _map_official_state(roles.get("status", "source_error"))
         builder.set_availability("roles", state, reason, checked_at=now)
 
-    group = records.get("group", {})
-    group_state, group_reason = _map_official_state(group.get("status", "source_error"), not_found_state="not_applicable", not_found_reason="not_in_a_group")
-    if group.get("status") == "available":
-        group_evidence_id = builder.add_evidence(
-            source_url=group["source_url"], source_class="official_group_structure", access_policy=NLOD,
-            retrieved_at=group.get("retrieved_at", now), http_status=200, content_sha256=group.get("content_sha256"),
-        )
-        children = (group.get("value") or {}).get("children", []) if isinstance(group.get("value"), dict) else []
-        for child in children:
-            child_org = child.get("organisasjonsnummer")
-            builder.add_claim(
-                field="group_structure", subkey=child_org,
-                value={"name": child.get("navn"), "relationship": (child.get("knytningsform") or {}).get("beskrivelse"), "basis": child.get("grunnlag"), "since": child.get("dato")},
-                availability="available", method="konsernstruktur_verbatim_v1", evidence_ids=[group_evidence_id], seen_at=now,
-            )
-        builder.set_availability("group_structure", "available" if children else "not_applicable", "found" if children else "group_endpoint_returned_no_relationships", checked_at=now)
+    if skip_group_structure:
+        builder.set_availability("group_structure", "failed", "budget_degraded_group_structure_skipped", checked_at=now)
     else:
-        builder.set_availability("group_structure", group_state, group_reason, checked_at=now)
+        group = records.get("group", {})
+        group_state, group_reason = _map_official_state(group.get("status", "source_error"), not_found_state="not_applicable", not_found_reason="not_in_a_group")
+        if group.get("status") == "available":
+            group_evidence_id = builder.add_evidence(
+                source_url=group["source_url"], source_class="official_group_structure", access_policy=NLOD,
+                retrieved_at=group.get("retrieved_at", now), http_status=200, content_sha256=group.get("content_sha256"),
+            )
+            children = (group.get("value") or {}).get("children", []) if isinstance(group.get("value"), dict) else []
+            for child in children:
+                child_org = child.get("organisasjonsnummer")
+                builder.add_claim(
+                    field="group_structure", subkey=child_org,
+                    value={"name": child.get("navn"), "relationship": (child.get("knytningsform") or {}).get("beskrivelse"), "basis": child.get("grunnlag"), "since": child.get("dato")},
+                    availability="available", method="konsernstruktur_verbatim_v1", evidence_ids=[group_evidence_id], seen_at=now,
+                )
+            builder.set_availability("group_structure", "available" if children else "not_applicable", "found" if children else "group_endpoint_returned_no_relationships", checked_at=now)
+        else:
+            builder.set_availability("group_structure", group_state, group_reason, checked_at=now)
 
     locations = records.get("locations", {})
     if locations.get("status") == "available":

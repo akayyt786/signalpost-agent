@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import re
 import socket
 import urllib.parse
@@ -59,6 +60,7 @@ def build_candidates(
     *,
     nav_homepage: str | None = None,
     dns_resolver: Callable[[str], bool] = _dns_resolves,
+    include_name_guess: bool = True,
 ) -> list[tuple[str, str]]:
     """[(url, tier_name), ...] in priority order, deduplicated by registered host.
 
@@ -88,7 +90,7 @@ def build_candidates(
     if wikidata_row and wikidata_row.get("websites"):
         add(wikidata_row["websites"][0], "wikidata_website")
     add(nav_homepage, "nav_job_ad_homepage")
-    if not candidates:
+    if not candidates and include_name_guess:
         slug = _name_slug(identity_source.get("name"))
         if slug:
             guess_host = f"{slug}.no"
@@ -113,8 +115,10 @@ def populate_website(
     reference_pack: ReferencePack,
     *,
     nav_homepage: str | None = None,
-    fetcher: Callable[[str], tuple[dict[str, Any], dict[str, Any]]] = fetch_website,
+    fetcher: Callable[[str], tuple[dict[str, Any], dict[str, Any]]] | None = None,
     max_candidates: int = 2,
+    max_pages: int = 4,
+    include_name_guess: bool = True,
 ) -> None:
     """Populate official_website, site_description, social_profiles, contact_points and
     public_activity. Only a `verified` or `corroborated` verdict ever publishes a website claim;
@@ -124,7 +128,8 @@ def populate_website(
     name = str(identity_source.get("name") or "")
     business_address = identity_source.get("business_address")
     phone = identity_source.get("phone")
-    candidates = build_candidates(identity_source, reference_pack, org, nav_homepage=nav_homepage)
+    fetcher = fetcher or functools.partial(fetch_website, max_pages=max_pages)
+    candidates = build_candidates(identity_source, reference_pack, org, nav_homepage=nav_homepage, include_name_guess=include_name_guess)
 
     downstream_families = ("site_description", "social_profiles", "contact_points", "public_activity")
 

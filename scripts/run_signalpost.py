@@ -74,6 +74,28 @@ class Budget:
             return True
         return self.requests_spent >= self.max_requests
 
+    def pressure_level(self) -> int:
+        """0 = full capability. 1..5 = graduated drop order (least to most severe), in the
+        documented order: name-guess candidates -> site-subpage crawl depth -> NAV job-detail
+        re-fetch cap -> group structure -> the whole website layer (which alone unlocks 4 other
+        field families, so it is the last resort). Whichever resource - requests or wall clock -
+        is closer to exhaustion drives the level, since either one alone can strand the batch.
+        """
+        request_ratio = self.requests_spent / self.max_requests if self.max_requests > 0 else 1.0
+        time_ratio = (time.monotonic() - self.started) / self.time_limit_s if self.time_limit_s > 0 else 1.0
+        ratio = max(request_ratio, time_ratio)
+        if ratio >= 0.97:
+            return 5
+        if ratio >= 0.90:
+            return 4
+        if ratio >= 0.82:
+            return 3
+        if ratio >= 0.70:
+            return 2
+        if ratio >= 0.55:
+            return 1
+        return 0
+
 
 def process_company(
     org: str,
@@ -100,10 +122,25 @@ def process_company(
             builder.set_availability(family, "failed", "budget_exhausted")
         return builder, "partial", {"requests": 0, "bytes": 0, "runtime_ms": 0, "budget_exhausted": True}
 
-    outcome = populate_foundation(builder, org, entity_pack, update_pack)
+    level = budget.pressure_level()
+    degradations: list[str] = []
+    outcome = populate_foundation(builder, org, entity_pack, update_pack, skip_group_structure=level >= 4)
+    if level >= 4:
+        degradations.append("group_structure_skipped")
     if outcome["identity_ok"]:
-        populate_website(builder, org, outcome["entity"], reference_pack)
-        populate_jobs(builder, org, nav_index_by_org, detail_fetcher=nav_detail_fetcher)
+        if level >= 5:
+            degradations.append("website_layer_skipped")
+            for family in ("official_website", "site_description", "social_profiles", "contact_points", "public_activity"):
+                builder.set_availability(family, "failed", "budget_degraded_website_layer_skipped")
+        else:
+            if level >= 1:
+                degradations.append("name_guess_disabled")
+            if level >= 2:
+                degradations.append("site_subpages_capped")
+            populate_website(builder, org, outcome["entity"], reference_pack, include_name_guess=level < 1, max_pages=1 if level >= 2 else 4)
+        if level >= 3:
+            degradations.append("job_detail_refetch_capped")
+        populate_jobs(builder, org, nav_index_by_org, detail_fetcher=nav_detail_fetcher, max_ads=1 if level >= 3 else 5)
         populate_registries(builder, org, reference_pack)
     else:
         for family in ("official_website", "site_description", "social_profiles", "contact_points"):
@@ -120,6 +157,7 @@ def process_company(
         "bytes": operations["bytes"],
         "runtime_ms": int((time.monotonic() - company_started) * 1000),
         "budget_exhausted": False,
+        "degradations": degradations,
     }
     return builder, terminal_status, metrics
 
@@ -187,6 +225,9 @@ def main() -> None:
             pending[org] = (builder, terminal_status, metrics)
             if metrics.get("budget_exhausted") and "budget_exhausted" not in degradations:
                 degradations.append("budget_exhausted")
+            for label in metrics.get("degradations") or []:
+                if label not in degradations:
+                    degradations.append(label)
             completed_count += 1
             if completed_count % args.checkpoint_every == 0:
                 print(f"[run_signalpost] {completed_count}/{len(unique_orgs)} companies processed, {budget.requests_spent} requests spent", file=sys.stderr)
