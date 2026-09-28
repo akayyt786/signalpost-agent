@@ -5,30 +5,14 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .connector_registry import field_families as _connector_field_families
 from .evidence import utc_now
 
 # Fixed field-family vocabulary. Used as the coverage join key everywhere (claims, availability,
-# the local scorer, and the site's per-company coverage strip). Never add or remove an entry
-# without updating AVAILABILITY_REASONS and every producer/consumer in the same change.
-FIELD_FAMILIES: tuple[str, ...] = (
-    "legal_identity",
-    "registered_address",
-    "industry",
-    "employees",
-    "status_flags",
-    "annual_accounts",
-    "roles",
-    "group_structure",
-    "locations",
-    "official_website",
-    "site_description",
-    "social_profiles",
-    "contact_points",
-    "job_postings",
-    "public_activity",
-    "credentials_and_approvals",
-    "external_references",
-)
+# the local scorer, and the site's per-company coverage strip). Derived from connector_registry.py
+# - adding a connector there extends this automatically. Never remove an entry a shipped connector
+# still populates without updating AVAILABILITY_REASONS and every producer/consumer in the same change.
+FIELD_FAMILIES: tuple[str, ...] = _connector_field_families()
 
 AvailabilityState = Literal["available", "not_available", "blocked", "not_applicable", "ambiguous", "failed"]
 

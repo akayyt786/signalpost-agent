@@ -1,0 +1,57 @@
+name: Nightly website-identity precision audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 03:17 UTC daily - off-peak, avoids colliding with the Pages workflow's own live pipeline run.
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - name: Run the precision audit
+        run: |
+          uv sync --frozen
+          uv run python scripts/audit_website_precision.py --count 2000 --seed 20261010 \
+            --review-output out/website-precision-audit.json
+      - name: Enforce the precision floor
+        run: |
+          uv run python -c "
+          import json, sys
+          report = json.load(open('out/website-precision-audit.json'))
+          published = report['published']
+          # Every published claim in docs/website-precision-audit-report.md's methodology is hand-
+          # confirmed correct at the point precision is measured; this job cannot re-run that human
+          # judgement automatically, so it enforces the one thing it CAN check with certainty every
+          # night without a human in the loop: the identity gate never regresses to publishing a
+          # claim through a code path other than the verified/corroborated verdict, and the
+          # published/audited ratio does not silently drift outside its historical band (a sudden
+          # jump would mean the gate got looser, not just luckier).
+          verified = report['verified']
+          corroborated = report['corroborated']
+          if published != verified + corroborated:
+              print(f'::error::published ({published}) != verified ({verified}) + corroborated ({corroborated}) - a claim reached availability=available through an unexpected path')
+              sys.exit(1)
+          audited = report['audited']
+          publish_rate = published / audited if audited else 0
+          if publish_rate > 0.15:
+              print(f'::error::publish rate {publish_rate:.3f} is far above the historical ~0.07 band (142/2000 at seed 20261010) - the identity gate may have loosened')
+              sys.exit(1)
+          print(f'OK: {published}/{audited} published ({publish_rate:.3f}), {verified} verified + {corroborated} corroborated, structurally consistent')
+          "
+      - name: Commit the refreshed audit evidence
+        if: success()
+        run: |
+          mkdir -p docs/evidence
+          cp out/website-precision-audit.json docs/evidence/website-precision-audit.json
+          git config user.name "signalpost-ci"
+          git config user.email "ci@signalpost.local"
+          git add docs/evidence/website-precision-audit.json
+          git diff --cached --quiet || git commit -m "ci: nightly precision-audit refresh ($(date -u +%Y-%m-%d))"
+          git push

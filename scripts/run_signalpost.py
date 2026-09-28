@@ -23,13 +23,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from norway_company_agent.envelope import FIELD_FAMILIES, EnvelopeBuilder  # noqa: E402
+from norway_company_agent.connector_registry import TIER_NEVER_DROP  # noqa: E402
+from norway_company_agent.connector_wiring import simple_connectors_in_drop_order  # noqa: E402
 from norway_company_agent.evidence import utc_now  # noqa: E402
 from norway_company_agent.foundation import populate_foundation  # noqa: E402
 from norway_company_agent.input_batch import read_batch  # noqa: E402
 from norway_company_agent.site_resolver import populate_website  # noqa: E402
 from norway_company_agent.sourcepacks import build_entity_pack, build_reference_pack, build_update_pack  # noqa: E402
 from norway_company_agent.connectors.nav_jobs import fetch_public_token, load_index_by_org, make_detail_fetcher, populate_jobs  # noqa: E402
-from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
 from norway_company_agent.state_store import diff_and_store, open_store, record_run  # noqa: E402
 from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # noqa: E402
 
@@ -141,7 +142,13 @@ def process_company(
         if level >= 3:
             degradations.append("job_detail_refetch_capped")
         populate_jobs(builder, org, nav_index_by_org, detail_fetcher=nav_detail_fetcher, max_ads=1 if level >= 3 else 5)
-        populate_registries(builder, org, reference_pack)
+        for spec, impl in simple_connectors_in_drop_order():
+            if spec.tier != TIER_NEVER_DROP and level >= spec.tier:
+                degradations.append(f"{spec.name}_skipped")
+                for family in spec.field_families:
+                    builder.set_availability(family, "failed", f"budget_degraded_{spec.name}_skipped")
+            else:
+                impl(builder, org, outcome["entity"], reference_pack)
     else:
         for family in ("official_website", "site_description", "social_profiles", "contact_points"):
             builder.set_availability(family, "failed", "identity_check_failed")

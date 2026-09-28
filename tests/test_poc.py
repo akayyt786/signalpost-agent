@@ -39,6 +39,8 @@ from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # n
 from scripts.build_site import render_company_page, render_index_row, render_not_found  # noqa: E402
 from scripts.score_local import score_precision_and_evidence, score_synthesis  # noqa: E402
 from scripts.run_signalpost import Budget, process_company  # noqa: E402
+from norway_company_agent.connector_registry import ConnectorSpec, TIER_NEVER_DROP, field_families, simple_connectors_by_tier  # noqa: E402
+from norway_company_agent.connector_wiring import simple_connectors_in_drop_order  # noqa: E402
 from select_entry_batch import write_splits  # noqa: E402
 
 
@@ -1086,7 +1088,7 @@ class ProcessCompanyDegradeLadderTests(unittest.TestCase):
         with patch("scripts.run_signalpost.populate_foundation") as foundation, \
              patch("scripts.run_signalpost.populate_website") as website, \
              patch("scripts.run_signalpost.populate_jobs") as jobs, \
-             patch("scripts.run_signalpost.populate_registries"):
+             patch("norway_company_agent.connector_wiring.populate_registries"):
             foundation.return_value = {"identity_ok": True, "entity": {}}
             builder, terminal_status, metrics = process_company(
                 "923609016", entity_pack=None, update_pack=None, reference_pack=None,
@@ -1109,7 +1111,7 @@ class ProcessCompanyDegradeLadderTests(unittest.TestCase):
         with patch("scripts.run_signalpost.populate_foundation") as foundation, \
              patch("scripts.run_signalpost.populate_website") as website, \
              patch("scripts.run_signalpost.populate_jobs"), \
-             patch("scripts.run_signalpost.populate_registries"):
+             patch("norway_company_agent.connector_wiring.populate_registries"):
             foundation.return_value = {"identity_ok": True, "entity": {}}
             builder, terminal_status, metrics = process_company(
                 "923609016", entity_pack=None, update_pack=None, reference_pack=None,
@@ -1119,6 +1121,36 @@ class ProcessCompanyDegradeLadderTests(unittest.TestCase):
         website.assert_not_called()
         self.assertEqual(builder.build(completed_at="t", terminal_status="completed")["availability"]["official_website"]["reason"], "budget_degraded_website_layer_skipped")
         self.assertIn("website_layer_skipped", metrics["degradations"])
+
+
+class ConnectorRegistryTests(unittest.TestCase):
+    def test_field_families_matches_the_known_17_family_vocabulary(self):
+        self.assertEqual(set(field_families()), set(FIELD_FAMILIES))
+        self.assertEqual(len(field_families()), 17)
+
+    def test_simple_connectors_are_ordered_lowest_tier_first(self):
+        ordered = simple_connectors_by_tier()
+        tiers = [spec.tier for spec in ordered]
+        self.assertEqual(tiers, sorted(tiers))
+
+    def test_every_simple_connector_has_a_bound_implementation(self):
+        # Raises RuntimeError if connector_registry.py declares a simple connector that
+        # connector_wiring.py never bound - exactly the failure mode a half-finished new
+        # source addition would produce, so this must not raise.
+        pairs = simple_connectors_in_drop_order()
+        names = {spec.name for spec, _impl in pairs}
+        self.assertEqual(names, {spec.name for spec in simple_connectors_by_tier()})
+
+    def test_adding_a_spec_extends_field_families_without_touching_envelope_py(self):
+        from norway_company_agent import connector_registry as registry_module
+        extra = ConnectorSpec("test_only_source", ("a_brand_new_family",), tier=TIER_NEVER_DROP, simple=True, description="synthetic")
+        original = registry_module.CONNECTORS
+        registry_module.CONNECTORS = original + (extra,)
+        try:
+            self.assertIn("a_brand_new_family", registry_module.field_families())
+        finally:
+            registry_module.CONNECTORS = original
+
 
 if __name__ == "__main__":
     unittest.main()
