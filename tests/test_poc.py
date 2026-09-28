@@ -361,6 +361,17 @@ class WebsiteTests(unittest.TestCase):
             with self.subTest(url=url), self.assertRaises(ValueError):
                 assert_public_url(url)
 
+    def test_oversized_hostname_raises_valueerror_not_a_raw_unicode_error(self):
+        # Same root cause as site_resolver's regression: an oversized DNS label makes
+        # socket.getaddrinfo raise UnicodeEncodeError, which is not a socket.gaierror subclass.
+        # assert_public_url's public contract is "raises ValueError, never a platform exception" -
+        # every caller (including _robots_allowed, called before fetch_website's own try/except
+        # begins) depends on that holding for every failure mode, not just DNS-not-found.
+        oversized_label = "a" * 80
+        with self.assertRaises(ValueError):
+            assert_public_url(f"https://{oversized_label}.no/")
+
+
 
 class OfficialNormalizationTests(unittest.TestCase):
     def test_accounting_obligation_is_categorical_for_as_but_not_enk(self):
@@ -699,6 +710,22 @@ class SiteResolverTests(unittest.TestCase):
             build_candidates(identity_source, ReferencePack(), "923609016", dns_resolver=lambda host: True),
             [("https://nordicfiskeeksport.no", "name_guess_dns_verified")],
         )
+
+    def test_oversized_name_guess_hostname_never_crashes_the_real_dns_resolver(self):
+        # Regression: org 976007441 "LEIF HÜBERTS LEGAT FOR STØTTETILTAK FOR UNGE I SØGNE OG HJELP
+        # TIL HUMANITÆR OG SOSIAL INNSATS STI" slugifies to a 78-character hostname label, over
+        # DNS's 63-octet limit. socket.getaddrinfo raises UnicodeEncodeError (not a gaierror/
+        # OSError subclass) for this, which crashed an entire 1000-company batch mid-run before
+        # the fix, since a narrower `except OSError` let it propagate uncaught through a worker
+        # thread. Uses the real, unmocked _dns_resolves - this must never raise, only return False.
+        from norway_company_agent.site_resolver import _dns_resolves
+        long_name = "LEIF HÜBERTS LEGAT FOR STØTTETILTAK FOR UNGE I SØGNE OG HJELP TIL HUMANITÆR OG SOSIAL INNSATS STI"
+        identity_source = {"name": long_name, "website": "", "email": "post@gmail.com"}
+        try:
+            candidates = build_candidates(identity_source, ReferencePack(), "976007441", dns_resolver=_dns_resolves)
+        except UnicodeError:
+            self.fail("build_candidates crashed on an oversized name-guess hostname instead of treating it as non-resolving")
+        self.assertEqual(candidates, [])
 
     def test_populate_website_publishes_only_on_verified_and_gates_downstream_families(self):
         def fake_fetch_verified(url):

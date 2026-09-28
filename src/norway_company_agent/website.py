@@ -46,7 +46,12 @@ def assert_public_url(url: str) -> None:
         raise ValueError("Local hosts are blocked")
     try:
         addresses = {item[4][0] for item in socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == "https" else 80), type=socket.SOCK_STREAM)}
-    except socket.gaierror as exc:
+    except (socket.gaierror, UnicodeError) as exc:
+        # UnicodeError (e.g. UnicodeEncodeError "label too long") is raised by the IDNA codec
+        # inside getaddrinfo for a malformed or oversized hostname - not a gaierror subclass, so
+        # catching only gaierror here let it escape as a raw UnicodeEncodeError instead of this
+        # function's normal ValueError contract. _robots_allowed() calls this before its own
+        # try/except begins, so an uncaught exception here previously crashed the whole batch.
         raise ValueError("Hostname did not resolve") from exc
     for address in addresses:
         ip = ipaddress.ip_address(address)

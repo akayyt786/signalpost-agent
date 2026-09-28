@@ -3,8 +3,10 @@ cache/
 state/
 data/nav-jobs-index.jsonl.gz.tmp
 signalpost-company-universe-2025.jsonl.gz
-smoke-companies.jsonl
+smoke-companies*.jsonl
 entry-companies.jsonl
+scale-rehearsal*.jsonl
+procurement-audit-batch.jsonl
 .venv/
 __pycache__/
 *.pyc

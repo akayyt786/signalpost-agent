@@ -42,7 +42,11 @@ def _dns_resolves(hostname: str) -> bool:
     try:
         socket.getaddrinfo(hostname, 443)
         return True
-    except OSError:
+    except (OSError, UnicodeError):
+        # UnicodeError (e.g. UnicodeEncodeError "label too long") is raised by the IDNA codec
+        # inside getaddrinfo for a hostname guess derived from an unusually long legal name -
+        # this is not an OSError subclass, so a narrower except here previously let it propagate
+        # and crash the entire batch. A malformed/oversized hostname simply does not resolve.
         return False
 
 
