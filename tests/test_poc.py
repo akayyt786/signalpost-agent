@@ -1052,6 +1052,14 @@ class BuildSiteTests(unittest.TestCase):
         self.assertNotIn("<script>alert(1)</script>", html_out)
         self.assertIn("&lt;script&gt;", html_out)
 
+    def test_a_field_family_with_no_hand_tuned_label_still_gets_a_styled_one(self):
+        # Regression: FAMILY_LABELS is a hand-tuned dict, but a new connector's family must never
+        # fall back to its raw lowercase Python identifier on the rendered page.
+        from scripts.build_site import family_label
+        self.assertEqual(family_label("public_contracts"), "PUBLIC CONTRACTS")
+        self.assertEqual(family_label("credentials_and_approvals"), "CREDENTIALS / APPROVALS")  # hand-tuned label still wins
+        self.assertEqual(family_label("some_brand_new_family"), "SOME BRAND NEW FAMILY")
+
 
 class ScoreLocalTests(unittest.TestCase):
     def claim(self, field, method, availability="available", evidence_ids=None):

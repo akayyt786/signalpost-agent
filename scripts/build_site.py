@@ -34,6 +34,13 @@ FAMILY_LABELS = {
 }
 
 
+def family_label(field: str) -> str:
+    """A hand-tuned label for the original families (e.g. the "/" in CREDENTIALS / APPROVALS),
+    auto-derived for any connector added since (snake_case -> UPPER CASE WITH SPACES) so a new
+    field family never renders as a raw lowercase Python identifier on the site."""
+    return FAMILY_LABELS.get(field, field.replace("_", " ").upper())
+
+
 def e(value: Any) -> str:
     return html.escape(str(value if value is not None else ""), quote=True)
 
@@ -61,7 +68,7 @@ def _evidence_by_id(envelope: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def render_claim_row(claim: dict[str, Any], evidence_by_id: dict[str, dict[str, Any]]) -> str:
     availability = claim["availability"]
-    field_label = FAMILY_LABELS.get(claim["field"], claim["field"])
+    field_label = family_label(claim["field"])
     subkey_suffix = f" · {e(claim['subkey'])}" if claim.get("subkey") else ""
     value_text = e(_claim_display_value(claim))
     period = claim.get("reporting_period")
@@ -102,7 +109,7 @@ def render_not_found(availability: dict[str, dict[str, Any]]) -> str:
     if not gaps:
         return ""
     rows = "".join(
-        f'<div class="row"><span>{e(FAMILY_LABELS.get(field, field))}</span>'
+        f'<div class="row"><span>{e(family_label(field))}</span>'
         f'<span class="reason">{e(entry["state"])} · {e(entry["reason"])}</span></div>'
         for field, entry in sorted(gaps)
     )
@@ -114,7 +121,7 @@ def render_changes(changes: list[dict[str, Any]]) -> str:
         return ""
     rows = []
     for change in changes:
-        field_label = FAMILY_LABELS.get(change["field"], change["field"])
+        field_label = family_label(change["field"])
         change_type = change["change_type"]
         if change_type == "new_value":
             body = f'<span class="new">{e(change.get("new_value"))}</span> (new)'
@@ -201,7 +208,7 @@ def _coverage_barcode(availability: dict[str, dict[str, Any]]) -> str:
     ticks = []
     for family in FIELD_FAMILIES:
         state = (availability.get(family) or {}).get("state", "failed")
-        ticks.append(f'<span class="tick {e(state)}" title="{e(FAMILY_LABELS.get(family, family))}: {e(state)}"></span>')
+        ticks.append(f'<span class="tick {e(state)}" title="{e(family_label(family))}: {e(state)}"></span>')
     return f'<span class="barcode">{"".join(ticks)}</span>'
 
 

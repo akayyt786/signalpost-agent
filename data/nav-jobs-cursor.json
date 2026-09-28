@@ -1,7 +1,7 @@
 {
-  "next_url": "https://pam-stilling-feed.nav.no/api/v1/feed/8e58245a-0ae4-4c09-a58d-eaa0c6bad3f3",
+  "next_url": "https://pam-stilling-feed.nav.no/api/v1/feed/c94ab2ad-60e5-4fb0-9281-63555c3734f1",
   "caught_up": false,
-  "pages_processed_this_run": 326,
-  "index_size": 0,
-  "updated_at": "2026-09-28T09:12:47.582519Z"
+  "pages_processed_this_run": 210,
+  "index_size": 3,
+  "updated_at": "2026-09-28T11:24:33.182148Z"
 }
