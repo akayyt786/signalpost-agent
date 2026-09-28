@@ -256,6 +256,21 @@ class EnvelopeBuilder:
         """Field families still carrying the not_processed_yet sentinel. Must be empty before build()."""
         return [field for field, entry in self._availability.items() if entry["reason"] == "not_processed_yet"]
 
+    @property
+    def claims(self) -> list[dict[str, Any]]:
+        """Read-only snapshot of claims accumulated so far, for refresh diffing before build()."""
+        return list(self._claims)
+
+    @property
+    def availability(self) -> dict[str, dict[str, Any]]:
+        """Read-only snapshot of per-family availability accumulated so far."""
+        return dict(self._availability)
+
+    @property
+    def operations(self) -> dict[str, Any]:
+        """Read-only snapshot of accumulated requests/bytes/cost so far, for budget tracking before build()."""
+        return dict(self._operations)
+
     def build(self, *, completed_at: str, terminal_status: Literal["completed", "failed", "partial"]) -> dict[str, Any]:
         envelope = Envelope(
             organisation_number=self.organisation_number,

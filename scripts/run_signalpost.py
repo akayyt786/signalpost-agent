@@ -29,6 +29,7 @@ from norway_company_agent.site_resolver import populate_website  # noqa: E402
 from norway_company_agent.sourcepacks import build_entity_pack, build_reference_pack, build_update_pack  # noqa: E402
 from norway_company_agent.connectors.nav_jobs import fetch_public_token, load_index_by_org, make_detail_fetcher, populate_jobs  # noqa: E402
 from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
+from norway_company_agent.state_store import diff_and_store, open_store, record_run  # noqa: E402
 
 AGENT_VERSION = "1.0.0"
 
@@ -84,15 +85,18 @@ def process_company(
     started_at: str,
     code_commit: str,
     budget: Budget,
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Returns (envelope, metrics). metrics feeds the run report's request/byte/latency accounting."""
+) -> tuple[EnvelopeBuilder, str, dict[str, Any]]:
+    """Returns (builder, terminal_status, metrics). `build()` is deferred until after the
+    sequential refresh-diff pass in main(), so `add_change()` calls land in the validated output.
+    """
     company_started = time.monotonic()
     builder = EnvelopeBuilder(org, run_id=run_id, started_at=started_at, agent_version=AGENT_VERSION, code_commit=code_commit)
     if budget.exhausted():
         for family in FIELD_FAMILIES:
-            builder.set_availability(family, "not_available", "budget_exhausted")
-        envelope = builder.build(completed_at=utc_now(), terminal_status="partial")
-        return envelope, {"requests": 0, "bytes": 0, "runtime_ms": 0, "budget_exhausted": True}
+            # `failed`, not `not_available`: this run made no attempt at all, so refresh must
+            # carry the previous value forward as `deferred` rather than treat it as confirmed gone.
+            builder.set_availability(family, "failed", "budget_exhausted")
+        return builder, "partial", {"requests": 0, "bytes": 0, "runtime_ms": 0, "budget_exhausted": True}
 
     outcome = populate_foundation(builder, org, entity_pack, update_pack)
     if outcome["identity_ok"]:
@@ -102,22 +106,20 @@ def process_company(
     else:
         for family in ("official_website", "site_description", "social_profiles", "contact_points"):
             builder.set_availability(family, "failed", "identity_check_failed")
-    # Extension point: step 9/10 (refresh diff, synthesis) attach more claims to `builder` here
-    # once implemented, gated on `outcome["identity_ok"]` so a failed identity never reaches an
-    # external-lookup layer.
+    # Extension point: step 10 (synthesis) attaches a summary to `builder` here once implemented.
     if not outcome["identity_ok"]:
         for family in ("job_postings", "public_activity", "credentials_and_approvals", "external_references"):
             builder.set_availability(family, "failed", "identity_check_failed")
     terminal_status = "completed" if outcome["identity_ok"] else "failed"
-    envelope = builder.build(completed_at=utc_now(), terminal_status=terminal_status)
-    budget.spend(envelope["operations"]["requests"])
+    operations = builder.operations
+    budget.spend(operations["requests"])
     metrics = {
-        "requests": envelope["operations"]["requests"],
-        "bytes": envelope["operations"]["bytes"],
+        "requests": operations["requests"],
+        "bytes": operations["bytes"],
         "runtime_ms": int((time.monotonic() - company_started) * 1000),
         "budget_exhausted": False,
     }
-    return envelope, metrics
+    return builder, terminal_status, metrics
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -134,6 +136,7 @@ def main() -> None:
     parser.add_argument("--input", required=True, help="Batch file: .txt, .jsonl, .json or .csv (optionally .gz)")
     parser.add_argument("--out", default="out", help="Output directory")
     parser.add_argument("--cache", default="cache", help="Bulk-download cache directory")
+    parser.add_argument("--state", default="state/signalpost.sqlite", help="Refresh/diff state store (see state_store.py)")
     parser.add_argument("--workers", type=int, default=12)
     parser.add_argument("--max-requests", type=int, default=6000)
     parser.add_argument("--time-limit", type=float, default=2400.0, help="Seconds before remaining companies are marked budget_exhausted")
@@ -165,8 +168,7 @@ def main() -> None:
     print(f"[run_signalpost] nav jobs index: {len(nav_index_by_org)} organisations indexed, public token {'acquired' if nav_token else 'unavailable'}", file=sys.stderr)
 
     budget = Budget(max_requests=args.max_requests, time_limit_s=args.time_limit)
-    computed: dict[str, dict[str, Any]] = {}
-    all_metrics: list[dict[str, Any]] = []
+    pending: dict[str, tuple[EnvelopeBuilder, str, dict[str, Any]]] = {}
     degradations: list[str] = []
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
@@ -177,14 +179,34 @@ def main() -> None:
         completed_count = 0
         for future in as_completed(futures):
             org = futures[future]
-            envelope, metrics = future.result()
-            computed[org] = envelope
-            all_metrics.append(metrics)
+            builder, terminal_status, metrics = future.result()
+            pending[org] = (builder, terminal_status, metrics)
             if metrics.get("budget_exhausted") and "budget_exhausted" not in degradations:
                 degradations.append("budget_exhausted")
             completed_count += 1
             if completed_count % args.checkpoint_every == 0:
                 print(f"[run_signalpost] {completed_count}/{len(unique_orgs)} companies processed, {budget.requests_spent} requests spent", file=sys.stderr)
+
+    # Sequential refresh-diff pass. sqlite3 connections are not safe to share across threads, and
+    # the diff itself is cheap (in-memory comparison + a handful of indexed row writes) next to the
+    # network-bound work already done in parallel above, so there is no real cost to serializing it.
+    state_conn = open_store(args.state)
+    computed: dict[str, dict[str, Any]] = {}
+    all_metrics: list[dict[str, Any]] = []
+    cold_start_count = 0
+    for org in unique_orgs:
+        builder, terminal_status, metrics = pending[org]
+        result = diff_and_store(state_conn, org, builder.claims, builder.availability)
+        if result["baseline"] == "cold_start":
+            cold_start_count += 1
+        for change in result["changes"]:
+            builder.add_change(**change)
+        builder.set_summary({"refresh_baseline": result["baseline"]})
+        computed[org] = builder.build(completed_at=utc_now(), terminal_status=terminal_status)
+        all_metrics.append(metrics)
+    record_run(state_conn, run_id=run_id, started_at=started_at, completed_at=utc_now(), input_rows=len(rows), requests=budget.requests_spent, cost_usd=0.0)
+    state_conn.close()
+    print(f"[run_signalpost] refresh: {cold_start_count}/{len(unique_orgs)} cold start, {len(unique_orgs) - cold_start_count} incremental", file=sys.stderr)
 
     envelopes: list[dict[str, Any]] = []
     for row in rows:

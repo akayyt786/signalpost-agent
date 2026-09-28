@@ -33,6 +33,7 @@ from norway_company_agent.site_resolver import build_candidates, populate_websit
 from norway_company_agent.sourcepacks import ReferencePack  # noqa: E402
 from norway_company_agent.connectors.nav_jobs import populate_jobs  # noqa: E402
 from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
+from norway_company_agent.state_store import diff_and_store, open_store  # noqa: E402
 
 
 class EvidenceTests(unittest.TestCase):
@@ -797,6 +798,64 @@ class RegistriesTests(unittest.TestCase):
         fields = {(c["subkey"]) for c in envelope["claims"] if c["field"] == "external_references"}
         self.assertEqual(fields, {"wikipedia_article", "social:linkedin"})
         self.assertNotIn("https://example.no", json.dumps(envelope["claims"]))
+
+
+class StateStoreTests(unittest.TestCase):
+    def make_claim(self, field, subkey, value, availability="available", evidence_ids=("ev-1",)):
+        return {
+            "claim_id": f"{field}:{subkey}", "field": field, "subkey": subkey, "value": value,
+            "unit": None, "reporting_period": None, "availability": availability, "confidence": 1.0,
+            "method": "test", "evidence_ids": list(evidence_ids), "first_seen": "2026-09-28T00:00:00Z", "last_seen": "2026-09-28T00:00:00Z",
+        }
+
+    def open_temp_store(self):
+        directory = tempfile.mkdtemp()
+        return open_store(Path(directory) / "state.sqlite")
+
+    def test_cold_start_reports_zero_changes_but_persists_a_baseline(self):
+        conn = self.open_temp_store()
+        claims = [self.make_claim("employees", None, 12)]
+        availability = {"employees": {"state": "available", "reason": "found", "checked_at": "x"}}
+        result = diff_and_store(conn, "923609016", claims, availability)
+        self.assertEqual(result["baseline"], "cold_start")
+        self.assertEqual(result["changes"], [])
+        second = diff_and_store(conn, "923609016", claims, availability)
+        self.assertEqual(second["baseline"], "incremental")
+        self.assertEqual(second["changes"], [], "identical rerun must be idempotent")
+
+    def test_changed_value_is_reported_with_old_and_new(self):
+        conn = self.open_temp_store()
+        availability = {"employees": {"state": "available", "reason": "found", "checked_at": "x"}}
+        diff_and_store(conn, "923609016", [self.make_claim("employees", None, 12)], availability)
+        result = diff_and_store(conn, "923609016", [self.make_claim("employees", None, 15)], availability)
+        self.assertEqual(len(result["changes"]), 1)
+        change = result["changes"][0]
+        self.assertEqual(change["change_type"], "changed_value")
+        self.assertEqual(change["old_value"], 12)
+        self.assertEqual(change["new_value"], 15)
+
+    def test_source_failure_defers_instead_of_removing(self):
+        conn = self.open_temp_store()
+        available = {"official_website": {"state": "available", "reason": "found", "checked_at": "x"}}
+        diff_and_store(conn, "923609016", [self.make_claim("official_website", None, "https://example.no")], available)
+        failed = {"official_website": {"state": "failed", "reason": "source_error", "checked_at": "x"}}
+        result = diff_and_store(conn, "923609016", [], failed)
+        self.assertEqual(len(result["changes"]), 1)
+        change = result["changes"][0]
+        self.assertEqual(change["change_type"], "deferred")
+        self.assertEqual(change["old_value"], "https://example.no")
+        # a deferred claim must still exist in the store afterwards, unchanged
+        remaining = diff_and_store(conn, "923609016", [], failed)
+        self.assertEqual(remaining["changes"][0]["change_type"], "deferred")
+
+    def test_genuine_absence_is_a_real_removal(self):
+        conn = self.open_temp_store()
+        available = {"official_website": {"state": "available", "reason": "found", "checked_at": "x"}}
+        diff_and_store(conn, "923609016", [self.make_claim("official_website", None, "https://example.no")], available)
+        checked_but_gone = {"official_website": {"state": "not_available", "reason": "insufficient_exact_entity_evidence", "checked_at": "x"}}
+        result = diff_and_store(conn, "923609016", [], checked_but_gone)
+        self.assertEqual(len(result["changes"]), 1)
+        self.assertEqual(result["changes"][0]["change_type"], "removed_value")
 
 
 if __name__ == "__main__":
