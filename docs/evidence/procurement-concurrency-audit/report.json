@@ -1,0 +1,72 @@
+{
+  "method": "Ran 500 real companies (seed 20261010) through the real concurrent run_signalpost.py pipeline (--workers 20), then independently re-queried TED fresh for every organisation number that published a public_contracts claim, confirming each claimed publication_number is genuinely present in that exact organisation live query result (not leaked from a concurrently-processed sibling company).",
+  "total_companies": 500,
+  "companies_with_published_contracts": 3,
+  "total_claims_published": 4,
+  "independent_reverification": "all 4 claims confirmed: each publication_number appears in a fresh, independent winner-identifier=<org> query for the exact same organisation number - zero cross-contamination under real concurrent load",
+  "published": [
+    {
+      "organisation_number": "998058376",
+      "claims": [
+        {
+          "publication_number": "137647-2025",
+          "value": {
+            "publication_number": "137647-2025",
+            "buyer_name": "Ålesund kommune",
+            "buyer_organisation_number": "929911709",
+            "notice_title": "Norway – Construction project management services – Procurement - Project manager, cleaner fjord, 2024",
+            "notice_type": "can-standard",
+            "publication_date": "2025-03-03+01:00",
+            "link": "https://ted.europa.eu/en/notice/-/detail/137647-2025"
+          }
+        }
+      ]
+    },
+    {
+      "organisation_number": "987403829",
+      "claims": [
+        {
+          "publication_number": "650003-2024",
+          "value": {
+            "publication_number": "650003-2024",
+            "buyer_name": "Innherred Anskaffelser",
+            "buyer_organisation_number": "997 391 853",
+            "notice_title": "Norway – Company health services – Company Health Services",
+            "notice_type": "can-social",
+            "publication_date": "2024-10-25+02:00",
+            "link": "https://ted.europa.eu/en/notice/-/detail/650003-2024"
+          }
+        }
+      ]
+    },
+    {
+      "organisation_number": "976700376",
+      "claims": [
+        {
+          "publication_number": "204738-2026",
+          "value": {
+            "publication_number": "204738-2026",
+            "buyer_name": "Klepp kommune",
+            "buyer_organisation_number": "864969682",
+            "notice_title": "Norway – Tubing services – Contract announcement - Framework agreement for plumbing services and accompanying materials.",
+            "notice_type": "can-standard",
+            "publication_date": "2026-03-25+01:00",
+            "link": "https://ted.europa.eu/en/notice/-/detail/204738-2026"
+          }
+        },
+        {
+          "publication_number": "285359-2026",
+          "value": {
+            "publication_number": "285359-2026",
+            "buyer_name": "Time Kommune",
+            "buyer_organisation_number": "859223672",
+            "notice_title": "Norway – Heating, ventilation and air-conditioning installation work – Expansion of Kvernaland welfare centre - heating, sanitation and sprinklers - EP05 - contract award",
+            "notice_type": "can-standard",
+            "publication_date": "2026-04-27+02:00",
+            "link": "https://ted.europa.eu/en/notice/-/detail/285359-2026"
+          }
+        }
+      ]
+    }
+  ]
+}
