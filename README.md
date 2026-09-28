@@ -1,115 +1,151 @@
-# Signalpost reference agent
+# Signalpost agent
 
-This is a runnable starting point for the Signalpost company-research challenge. It is intentionally a solid baseline, not a winning submission.
+An evidence-backed company-profile agent for the [Signalpost competition](https://builderr.ai)
+(hosted on Unstop): give it a Norwegian organisation number, get back a JSON envelope of claims,
+each one tied to a dated, hashed, URL-linked source — never a fact about the wrong company.
 
-The public universe contains 411,160 eligible companies. Run the starter on 100 companies before submitting. Larger local tests, including 1,000 or more companies, are encouraged but their precomputed profiles are not submitted or scored.
-
-## What it already does
-
-- reads a batch of Norwegian organisation numbers;
-- anchors identity in the Brønnøysund bulk registry;
-- fetches official financials, roles, group links and registered workplaces;
-- visits the registry-listed website and rejects weak entity matches;
-- emits one terminal JSONL envelope per input;
-- records sources, retrieval times, content hashes, request counts and latency;
-- supports checkpoint/resume and a deterministic refresh replay;
-- includes examples for external-footprint discovery and an evidence-bounded research agent.
-
-## First run: try one saved example
-
-Requires Python 3.12+. Open a terminal inside this extracted folder.
-
-Before downloading company data or running a full crawl, try the bundled public
-sample. It uses saved responses: no API key, registry download or live web requests.
+## Run it
 
 ```bash
-python3 scripts/run_refresh_replay.py \
-  --manifest tests/fixtures/refresh-snapshots.json \
-  --output out/refresh-demo.json
+./run.sh <batch-file> <out-dir>
 ```
 
-Open `out/refresh-demo.json`. The `events` list shows what changed between two
-versions of one company profile and the source evidence for each change. The sample
-should find two expected changes, no false changes, and no extra changes when the
-same data is checked again.
-
-The report's `qualification_passed` field refers only to this public sample check.
-It does not qualify an entry for the competition or prove live information coverage.
-The printed request counts are reads from saved responses, not network calls.
-
-## Next: research live companies
-
-Requires Python 3.12+ and `uv`. This step downloads data and makes live requests.
-The manifest selector can create a local test batch of any size. Use 100 rows for the recommended smoke test before trying a larger batch.
+`batch-file` is a list of Norwegian organisation numbers — `.txt` (one per line), `.jsonl`, `.json`,
+or `.csv` (any of these optionally `.gz`), using any of the field names
+`organisation_number` / `organisasjonsnummer` / `orgnr` / `org_number` / `organizationNumber`.
+`out-dir` defaults to `out/`. The script itself is `uv run python scripts/run_signalpost.py`; `run.sh`
+just runs `uv sync --frozen` first and forwards every extra argument.
 
 ```bash
-uv sync
-curl -L 'https://data.brreg.no/enhetsregisteret/api/enheter/lastned/csv' -o brreg-enheter.csv
-curl -L 'https://builderr.ai/signalpost-company-universe-2025.jsonl.gz' -o signalpost-universe.jsonl.gz
-
+# 100-company smoke test
+curl -LO https://builderr.ai/signalpost-company-universe-2025.jsonl.gz
 uv run python select_entry_batch.py \
-  --universe signalpost-universe.jsonl.gz \
-  --count 100 \
-  --output entry-companies.jsonl
-
-# Use the 100-company batch as your smoke test.
-cp entry-companies.jsonl smoke-companies.jsonl
-
-uv run python scripts/run_competition_batch.py \
-  --organisations smoke-companies.jsonl \
-  --bulk brreg-enheter.csv \
-  --profiles-output out/smoke-profiles.jsonl \
-  --output out/smoke-envelopes.jsonl \
-  --report out/smoke-report.json \
-  --run-id smoke-001 \
-  --expected-count 100
-
-# You may test at larger scale locally, but Builderr supplies the official batch for scoring.
-uv run python scripts/run_competition_batch.py \
-  --organisations entry-companies.jsonl \
-  --bulk brreg-enheter.csv \
-  --profiles-output out/profiles.jsonl \
-  --output out/envelopes.jsonl \
-  --report out/run-report.json \
-  --run-id local-001 \
-  --expected-count 1000
-
-uv run --with pytest pytest -q
+  --universe signalpost-company-universe-2025.jsonl.gz --count 100 --output smoke-companies.jsonl
+./run.sh smoke-companies.jsonl out/smoke
+uv run python scripts/build_site.py --envelopes out/smoke/envelopes.jsonl --report out/smoke/run-report.json --out out/smoke/site
+uv run python scripts/score_local.py --envelopes out/smoke/envelopes.jsonl --report out/smoke/run-report.json --site out/smoke/site
 ```
 
-The published archive was clean-room verified on August 24, 2026: 104 tests and 5 subtests passed, followed by a one-company live BRREG smoke run with one terminal envelope, five requests and zero silent drops.
+Install step: `uv sync --frozen` (Python 3.12+, dependencies pinned in `uv.lock`).
 
-Increase `--count` and `--expected-count` together for a larger local test. The 100-row smoke test above is practice only; Builderr supplies the companies for every official run.
+Test suite: `uv run --with pytest pytest -q` — 101 tests, 3 subtests, all pure/offline (no live
+network calls; live behaviour is verified separately and documented in the git history).
 
-## The improvement loop
+## What it does
 
-1. Treat the organisation number as the anchor.
-2. Generate site/profile candidates from official data, the company site, lawful search providers and named people.
-3. Save every candidate and the evidence for or against it.
-4. Publish only exact-entity matches. Parent, brand, franchise and similarly named companies are not exact.
-5. Crawl static HTML first. Escalate to a browser only when a deterministic completeness check fails.
-6. Measure added supported coverage, wrong-company claims, runtime, requests and cost.
-7. Promote a strategy only when it improves coverage without weakening the accuracy gates.
-8. Freeze strategies and thresholds before the daily evaluation run.
+For each organisation number, in order:
 
-The strongest differentiator is external evidence that remains exact and auditable: official company pages, company-owned profiles, jobs, dated activity, ratings/reviews and permitted public signals. Do not trade accuracy for volume.
+1. **Identity foundation** (`src/norway_company_agent/foundation.py`) — legal identity, registered
+   address, industry (NACE), employee count, status flags, and annual accounts copied verbatim from
+   the official Brønnøysund registry (bulk CSV, refreshed against the live API only for companies the
+   daily update feed says changed since the snapshot), plus active roles, group structure and
+   registered subunits/locations.
+2. **Website identity gate** (`src/norway_company_agent/site_resolver.py`) — resolves a candidate
+   company website (registered `hjemmeside` → corporate-domain email → DIBK/Wikidata/NAV
+   cross-reference → a DNS-verified name-guess as a last resort), then **only publishes a website
+   claim when the organisation number itself is found on a fetched page** (`verified`) or the exact
+   legal name plus the registered address/phone are corroborated (`corroborated`). A different valid
+   organisation number on the page (accountant, franchisor, parent) is a `conflict` and publishes
+   nothing; anything weaker is `ambiguous` and also publishes nothing. Single-token legal names never
+   reach `corroborated` — they require the organisation number. Only a `verified` site unlocks its
+   description, outbound social links, on-site contact details, and on-site news/press pages.
+3. **Job postings** (`src/norway_company_agent/connectors/nav_jobs.py`) — from NAV's public job-ad
+   feed, re-fetching each ad's detail at run time so only currently `ACTIVE`, unexpired ads for the
+   exact `employer.orgnr` are published; `contactList` is never published.
+4. **Credentials and external references** (`src/norway_company_agent/connectors/registries.py`) —
+   DIBK central-approval status and Wikidata's orgnr-linked external references (Wikipedia, logo,
+   social handles), both already orgnr-keyed so there is no identity risk.
+5. **Synthesis** (`src/norway_company_agent/summarize.py`) — a deterministic summary built only from
+   published claims, always shipped. An optional grounded LLM rewrite runs only when
+   `SIGNALPOST_LLM_API_KEY` is set, and its output is discarded unless a validator confirms every
+   number, date, name and URL it uses appears verbatim in the claim set.
 
-## Important source rule
+Every one of the 17 field families (`legal_identity`, `registered_address`, `industry`, `employees`,
+`status_flags`, `annual_accounts`, `roles`, `group_structure`, `locations`, `official_website`,
+`site_description`, `social_profiles`, `contact_points`, `job_postings`, `public_activity`,
+`credentials_and_approvals`, `external_references`) appears in every envelope's `availability` map
+with one of `available`, `not_available`, `blocked`, `not_applicable`, `ambiguous`, `failed` and a
+machine-readable reason — a checked source with nothing to report is never confused with a source
+never reached, and absence is never rendered as zero.
 
-Open-source code does not grant permission to scrape a platform. Follow each source's terms, robots policy, rate limits and licence. LinkedIn, Meta and Indeed are useful identity/discovery targets, but direct automated collection may be restricted. Use permitted APIs, licensed providers, company-owned outbound links, or return `blocked`/`not_available`.
+Envelope shape: see `OUTPUT_CONTRACT.md` for a minimal example and
+`src/norway_company_agent/envelope.py` for the full Pydantic model.
 
-Read `docs/competition-control-loop.md`, `docs/external-connectors.md` and the public source policy before adding connectors.
+## Refresh, not re-discovery
 
-## Submission contract
+Re-running the same batch reuses `state/signalpost.sqlite` (SQLite `claims`/`evidence`/`runs`
+tables) and reports only genuine `new_value` / `changed_value` / `removed_value` / `deferred`
+changes. A source that fails on a given run never produces `removed_value` for what it previously
+found — the old claim is carried forward as `deferred` with the failure reason, so a transient
+outage never reads as "this fact disappeared." A cold start (no prior state, the daily-container
+case) always reports `changes: []` with `refresh.baseline: "cold_start"`, never a wall of new-value
+changes for a company seen for the first time. Duplicate organisation numbers within one input batch
+are computed once and reused for every duplicate row — never re-fetched.
 
-Submit a repository with:
+## Budget-exhaustion degrade ladder
 
-- a 100-company smoke-test result or report;
-- one documented command that accepts a JSONL batch of organisation numbers;
-- exactly one terminal envelope per input;
-- pinned dependencies and reproducible setup;
-- a previous-snapshot input and material-change output;
-- a machine-readable run report with runtime, request count and third-party cost;
-- declared models, APIs, licences and source-rights assumptions.
+Under request or time pressure, `run_signalpost.py` degrades gracefully rather than dropping
+company rows: as `Budget.pressure_level()` rises, it disables the weakest (DNS name-guess) website
+candidate tier, then caps site-subpage crawl depth, then caps NAV job-detail re-fetches, then skips
+`group_structure`, and only as a last resort skips the whole website layer for a company. The
+**terminal batch contract always holds** — exactly one envelope per input row, in input order, even
+at `--max-requests 300` (verified live; see git history for the run-report evidence).
 
-Email the repository URL, run command, models/APIs and expected cost per 100-company run to `submit@builderr.ai`.
+## Verification site
+
+```bash
+uv run python scripts/build_site.py --envelopes out/envelopes.jsonl --report out/run-report.json --out out/site
+open out/site/index.html   # or serve it — see .github/workflows/pages.yml for GitHub Pages
+```
+
+Static HTML/CSS/JS, no framework, no build step, works directly from `file://` or GitHub Pages —
+`index.html` is a filterable/sortable table with a 17-cell "coverage barcode" per company (one tick
+per field family, coloured by availability); `company/<orgnr>.html` is a full evidence dossier with
+every claim's source link, retrieval time and proof span, a "what changed" diff, and a `NOT FOUND`
+ledger naming every gap with its reason. A company whose envelope fails to parse still appears in
+the index with a `[ PARSE_ERROR ]` badge — never silently dropped.
+
+## Local scoring harness
+
+```bash
+uv run python scripts/score_local.py --envelopes out/envelopes.jsonl --report out/run-report.json --site out/site
+```
+
+Mirrors the published rubric shape (recall & coverage 50 · precision & evidence 30 · synthesis 12 ·
+UX 8) and reports what can be verified with certainty from our own output alone: zero wrong-company
+publications (structural check — every published site-derived claim requires its own company's
+`official_website` claim to have passed the identity gate), evidence completeness, synthesis
+self-consistency, UX structure, and (with `--previous <envelopes.jsonl>`) the refresh false-change
+rate. It is explicit that recall/coverage against the organiser's hidden pooled-evidence collection
+cannot be reproduced locally — that section is a self-measured coverage number, not a score.
+
+`select_entry_batch.py --splits development:600,validation:200,final:200` freezes three
+non-overlapping company sets from the public universe (same seed → same output; no organisation
+number or website host is ever split across sets — a group and its subsidiary sharing a domain
+always land together).
+
+`scripts/audit_website_precision.py` is the website-identity precision audit: it draws a large,
+deterministic, unique-host sample and runs the real identity gate against the live web, writing out
+every published claim's evidence for hand review.
+
+## Sources, licences, and what was deliberately left out
+
+Official Brønnøysund registry data (NLOD 2.0), NAV's public job-ad feed (terms:
+`https://arbeidsplassen.nav.no/vilkar-api`, public token fetched at run time — no personal
+credential required), DIBK's central-approval register, and Wikidata (CC0). See `CRAWLERS.md` for
+the full source ledger with exact endpoints and cadence, and `docs/norway-sources.md` for the wider
+Brønnøysund endpoint map.
+
+LinkedIn, Meta, Glassdoor, Indeed and similar platforms whose terms prohibit the collection method
+used here are **not** implemented, by design — not stubbed, not quarantined behind a flag, simply
+absent. `scripts/run_google_news_rss_connector.py` exists but ships **disabled by default**; it may
+only be enabled after a hand-labelled precision check per-source, which has not yet been run.
+
+## Declared models and cost
+
+No LLM call is made unless `SIGNALPOST_LLM_API_KEY` is set — the agent runs, and qualifies, with a
+declared third-party cost of **$0**. When a key is supplied, the optional synthesis rewrite uses
+`SIGNALPOST_LLM_MODEL` (default `gpt-4.1-mini`) against the claim list only, guarded by
+`--llm-max-cost-usd` (default 3.00 per run), and its output is used only if every number, date, name
+and URL it contains is verified present in the claim set — otherwise the deterministic summary
+ships. `summary.generator` records which one actually ran (`deterministic_v1` or `llm_grounded_v1`).
