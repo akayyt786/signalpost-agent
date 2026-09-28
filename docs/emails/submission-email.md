@@ -8,7 +8,7 @@ Signalpost entry submission.
 **Entrant:** Arman Katia (akaykatia9@gmail.com), solo.
 
 **Repository:** https://github.com/akayyt786/signalpost-agent
-**Commit:** `663c16ed713b62ccd657f7353591c94fb49e115d` (tag `v1`)
+**Commit:** `56a639f` (tag `v1`) — full 40-char hash: `git rev-parse v1` on the repository above
 
 **Run command:**
 ```
