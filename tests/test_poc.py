@@ -26,6 +26,8 @@ from norway_company_agent.snapshots import SnapshotFetcher  # noqa: E402
 from bs4 import BeautifulSoup  # noqa: E402
 from scripts.run_scrapy_websites import terminal_events_for_run  # noqa: E402
 from scripts.run_google_news_rss_connector import exact_title_match  # noqa: E402
+from norway_company_agent.input_batch import normalize_org_digits, read_batch, valid_check_digit  # noqa: E402
+from norway_company_agent.envelope import FIELD_FAMILIES, EnvelopeBuilder  # noqa: E402
 
 
 class EvidenceTests(unittest.TestCase):
@@ -513,6 +515,89 @@ class VerifiedSiteSeedTests(unittest.TestCase):
             failed = subprocess.run(command, capture_output=True, text=True)
             self.assertNotEqual(failed.returncode, 0)
             self.assertIn("unknown organisations", failed.stderr)
+
+
+class InputBatchTests(unittest.TestCase):
+    def test_check_digit_accepts_known_valid_numbers_and_rejects_tampered_ones(self):
+        self.assertTrue(valid_check_digit("923609016"))
+        self.assertTrue(valid_check_digit("810034882"))
+        self.assertFalse(valid_check_digit("810034881"))
+        self.assertFalse(valid_check_digit("12345678"))
+
+    def test_normalize_org_digits_strips_spaces_and_letters(self):
+        self.assertEqual(normalize_org_digits("923 609 016"), "923609016")
+        self.assertEqual(normalize_org_digits("NO923609016MVA"), "923609016")
+        self.assertEqual(normalize_org_digits(None), "")
+
+    def test_read_batch_preserves_input_order_and_duplicates_and_never_raises(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "batch.txt"
+            path.write_text("923609016\n923609016\n810034881\nnot-a-number\n810034882\n", encoding="utf-8")
+            rows = read_batch(path)
+        self.assertEqual([row["raw"] for row in rows], ["923609016", "923609016", "810034881", "not-a-number", "810034882"])
+        self.assertEqual([row["valid"] for row in rows], [True, True, False, False, True])
+        self.assertEqual(rows[2]["error"], "invalid mod-11 check digit")
+        self.assertIn("expected 9 digits", rows[3]["error"])
+
+    def test_read_batch_jsonl_accepts_any_known_key_name(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "batch.jsonl"
+            path.write_text('{"organisation_number": "923609016"}\n{"orgnr": "810034882"}\n', encoding="utf-8")
+            rows = read_batch(path)
+        self.assertEqual([row["organisation_number"] for row in rows], ["923609016", "810034882"])
+
+    def test_read_batch_transparently_decompresses_gz(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "batch.txt.gz"
+            with gzip.open(path, "wt", encoding="utf-8") as handle:
+                handle.write("923609016\n")
+            rows = read_batch(path)
+        self.assertEqual(rows, [{"raw": "923609016", "organisation_number": "923609016", "valid": True, "error": None}])
+
+
+class EnvelopeBuilderTests(unittest.TestCase):
+    def make_builder(self):
+        return EnvelopeBuilder("923609016", run_id="test-run", started_at="2026-09-28T00:00:00Z", agent_version="1.0.0", code_commit="abc123")
+
+    def test_unset_families_catches_a_family_no_code_path_touched(self):
+        builder = self.make_builder()
+        self.assertEqual(set(builder.unset_families()), set(FIELD_FAMILIES))
+        builder.set_availability("legal_identity", "available", "found")
+        remaining = builder.unset_families()
+        self.assertNotIn("legal_identity", remaining)
+        self.assertEqual(len(remaining), len(FIELD_FAMILIES) - 1)
+
+    def test_claim_id_is_stable_for_the_same_org_field_subkey(self):
+        builder = self.make_builder()
+        evidence_id = builder.add_evidence(source_url="https://example.test", source_class="official_registry_live", access_policy="NLOD-2.0", http_status=200)
+        claim_a = builder.add_claim(field="annual_accounts", subkey="1:revenue", value=100, availability="available", method="verbatim", evidence_ids=[evidence_id])
+        claim_b = builder.add_claim(field="annual_accounts", subkey="1:revenue", value=200, availability="available", method="verbatim", evidence_ids=[evidence_id])
+        self.assertEqual(claim_a["claim_id"], claim_b["claim_id"])
+        other = builder.add_claim(field="annual_accounts", subkey="1:operating_result", value=100, availability="available", method="verbatim", evidence_ids=[evidence_id])
+        self.assertNotEqual(claim_a["claim_id"], other["claim_id"])
+
+    def test_build_rejects_unknown_field_family(self):
+        builder = self.make_builder()
+        with self.assertRaises(ValueError):
+            builder.add_claim(field="not_a_real_family", value=1, availability="available", method="x", evidence_ids=[])
+        with self.assertRaises(ValueError):
+            builder.set_availability("not_a_real_family", "available", "x")
+
+    def test_build_emits_a_valid_envelope_with_every_family_present(self):
+        builder = self.make_builder()
+        evidence_id = builder.add_evidence(source_url="https://example.test", source_class="official_registry_live", access_policy="NLOD-2.0", http_status=200, content_sha256="a" * 64)
+        builder.add_claim(field="legal_identity", value={"name": "Example AS"}, availability="available", method="verbatim", evidence_ids=[evidence_id])
+        for family in FIELD_FAMILIES:
+            if family != "legal_identity":
+                builder.set_availability(family, "not_available", "not_checked_in_this_test")
+            else:
+                builder.set_availability(family, "available", "found")
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["organisation_number"], "923609016")
+        self.assertEqual(set(envelope["availability"].keys()), set(FIELD_FAMILIES))
+        self.assertEqual(envelope["claims"][0]["value"], {"name": "Example AS"})
+        self.assertEqual(envelope["evidence"][0]["content_sha256"], "a" * 64)
+        self.assertEqual(envelope["run"]["terminal_status"], "completed")
 
 
 if __name__ == "__main__":
