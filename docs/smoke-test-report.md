@@ -22,8 +22,8 @@ organiser-declared hash).
 | Unique companies | 100 |
 | Emitted envelopes | 100 (validation: `passed: true`) |
 | Cold-start companies | 100/100 (0 incremental — first run against empty state) |
-| Requests | 554 (well inside `--max-requests 6000`) |
-| Runtime | 187s (well inside `--time-limit 2400`) |
+| Requests | 654 (well inside `--max-requests 6000`) |
+| Runtime | 191s (well inside `--time-limit 2400`) |
 | Third-party cost | $0.00 (no LLM key set) |
 | Budget exhausted / degradations | none |
 
@@ -54,6 +54,12 @@ valid organisation number on the page). Zero candidates reached `verified`/`corr
 particular draw — see `docs/website-precision-audit-report.md` for the separate 2,000-company,
 website-having-only audit that measured the identity gate's actual precision (142/142 = 1.000) and
 publish rate.
+
+`public_contracts` (the newly-added EU TED connector, 18th field family) found 1/100 companies with
+a real, verified public-contract award in this draw — a genuine, zero-fabrication signal from a
+source distinct from the registry/website/jobs families above. See `CRAWLERS.md` for the connector
+ledger, including the 5 additional sources investigated and rejected on the same live-verification
+bar (Doffin's own undocumented API, Altinn, Patentstyret, Skatteetaten, SSB, Kartverket/Geonorge).
 
 ## Live site
 

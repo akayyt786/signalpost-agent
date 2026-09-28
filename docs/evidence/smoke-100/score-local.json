@@ -76,12 +76,12 @@
         "companies_with_data": 0,
         "total_claims": 0
       },
-      "job_postings": {
+      "public_activity": {
         "company_coverage": 0.0,
         "companies_with_data": 0,
         "total_claims": 0
       },
-      "public_activity": {
+      "job_postings": {
         "company_coverage": 0.0,
         "companies_with_data": 0,
         "total_claims": 0
@@ -95,12 +95,17 @@
         "company_coverage": 0.0,
         "companies_with_data": 0,
         "total_claims": 0
+      },
+      "public_contracts": {
+        "company_coverage": 0.01,
+        "companies_with_data": 1,
+        "total_claims": 2
       }
     }
   },
   "precision_and_evidence": {
     "points": 30.0,
-    "total_available_claims": 1642,
+    "total_available_claims": 1644,
     "evidence_completeness": 1.0,
     "wrong_company_publications": [],
     "zero_wrong_company_publications": true

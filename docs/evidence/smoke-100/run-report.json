@@ -1,7 +1,7 @@
 {
-  "run_id": "local-1790590787",
-  "started_at": "2026-09-28T10:19:47.256322Z",
-  "completed_at": "2026-09-28T10:22:54.787939Z",
+  "run_id": "local-1790597121",
+  "started_at": "2026-09-28T12:05:21.707937Z",
+  "completed_at": "2026-09-28T12:08:29.873493Z",
   "input_rows": 100,
   "unique_companies": 100,
   "emitted_envelopes": 100,
@@ -13,10 +13,10 @@
     "sha256": "c0df09c3fbd654e61a0962043e87a5daed8e5b7093be297cc63afb81e2239deb"
   },
   "operations": {
-    "requests": 554,
-    "bytes": 11948506,
-    "p50_ms": 12042,
-    "p95_ms": 36984,
+    "requests": 654,
+    "bytes": 11972714,
+    "p50_ms": 10901,
+    "p95_ms": 35196,
     "third_party_cost_usd": 0.0
   },
   "budget_exhausted": false,
