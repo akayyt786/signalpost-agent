@@ -28,6 +28,9 @@ from scripts.run_scrapy_websites import terminal_events_for_run  # noqa: E402
 from scripts.run_google_news_rss_connector import exact_title_match  # noqa: E402
 from norway_company_agent.input_batch import normalize_org_digits, read_batch, valid_check_digit  # noqa: E402
 from norway_company_agent.envelope import FIELD_FAMILIES, EnvelopeBuilder  # noqa: E402
+from norway_company_agent.identity import classify_publication_verdict  # noqa: E402
+from norway_company_agent.site_resolver import build_candidates, populate_website  # noqa: E402
+from norway_company_agent.sourcepacks import ReferencePack  # noqa: E402
 
 
 class EvidenceTests(unittest.TestCase):
@@ -598,6 +601,117 @@ class EnvelopeBuilderTests(unittest.TestCase):
         self.assertEqual(envelope["claims"][0]["value"], {"name": "Example AS"})
         self.assertEqual(envelope["evidence"][0]["content_sha256"], "a" * 64)
         self.assertEqual(envelope["run"]["terminal_status"], "completed")
+
+
+class PublicationVerdictTests(unittest.TestCase):
+    def test_verified_when_organisation_number_found_on_page(self):
+        verdict = classify_publication_verdict("923609016", "Equinor ASA", {
+            "title": "Equinor ASA", "final_url": "https://equinor.com/",
+            "pages": [{"main_text_excerpt": "Equinor ASA, organisasjonsnummer 923 609 016, NO-4035 Stavanger"}],
+        })
+        self.assertEqual(verdict["verdict"], "verified")
+        self.assertIn("923 609 016", verdict["proof_span"])
+
+    def test_conflict_when_a_different_valid_organisation_number_is_present(self):
+        verdict = classify_publication_verdict("810034882", "Sandnes Elektriske AS", {
+            "title": "Regnskapsforer AS", "final_url": "https://regnskapsforer.no/",
+            "pages": [{"main_text_excerpt": "Vi forer regnskap for Sandnes Elektriske AS. Org.nr 923 609 016"}],
+        })
+        self.assertEqual(verdict["verdict"], "conflict")
+        self.assertEqual(verdict["other_org_numbers"], ["923609016"])
+
+    def test_corroborated_requires_multi_token_name_plus_address_or_phone(self):
+        verdict = classify_publication_verdict("923304290", "Norsk Fiskeeksport AS", {
+            "title": "Norsk Fiskeeksport AS", "final_url": "https://norskfiskeeksport.no/",
+            "description": "Norsk Fiskeeksport AS - sjømat",
+            "pages": [{"main_text_excerpt": "Norsk Fiskeeksport AS, Strandgata 5, 6002 Ålesund"}],
+        }, business_address={"address": "Strandgata 5"})
+        self.assertEqual(verdict["verdict"], "corroborated")
+
+    def test_single_token_legal_name_never_reaches_corroborated(self):
+        verdict = classify_publication_verdict("999999999", "NORDIC AS", {
+            "title": "Nordic", "final_url": "https://nordic.no/", "pages": [],
+        })
+        self.assertEqual(verdict["verdict"], "ambiguous")
+        self.assertEqual(verdict["reason"], "single_token_name_requires_organisation_number")
+
+    def test_group_portfolio_page_naming_the_company_is_not_published(self):
+        verdict = classify_publication_verdict("923304290", "Norsk Fiskeeksport AS", {
+            "title": "Norsk Fiskeeksport Group portfolio", "final_url": "https://parent-group.no/",
+            "pages": [{"main_text_excerpt": "Norsk Fiskeeksport is part of our portfolio of companies"}],
+        })
+        self.assertEqual(verdict["verdict"], "ambiguous")
+
+    def test_parked_domain_is_ambiguous_even_with_matching_title(self):
+        verdict = classify_publication_verdict("999999999", "Example AS", {
+            "title": "CondAlign.com is for sale | HugeDomains", "final_url": "https://condalign.com/", "pages": [],
+        })
+        self.assertEqual(verdict["verdict"], "ambiguous")
+        self.assertEqual(verdict["reason"], "parked_or_for_sale_page")
+
+
+class SiteResolverTests(unittest.TestCase):
+    def test_candidate_ladder_prefers_registry_site_then_email_domain_then_skips_freemail(self):
+        no_dns = lambda host: False  # noqa: E731 - deterministic stand-in, never hits real DNS
+        identity_source = {"name": "Example AS", "website": "example.no", "email": "post@example.no"}
+        candidates = build_candidates(identity_source, ReferencePack(), "923609016", dns_resolver=no_dns)
+        self.assertEqual(candidates, [("https://example.no", "registry_website")])
+
+        identity_source = {"name": "Example AS", "website": "", "email": "post@gmail.com"}
+        candidates = build_candidates(identity_source, ReferencePack(), "923609016", dns_resolver=no_dns)
+        self.assertEqual(candidates, [])
+
+        identity_source = {"name": "Example AS", "website": "", "email": "post@example-corp.no"}
+        candidates = build_candidates(identity_source, ReferencePack(), "923609016", dns_resolver=no_dns)
+        self.assertEqual(candidates, [("https://example-corp.no/", "registry_email_domain")])
+
+    def test_name_guess_fallback_only_fires_when_dns_resolves_and_nothing_else_exists(self):
+        identity_source = {"name": "Nordic Fiskeeksport AS", "website": "", "email": "post@gmail.com"}
+        self.assertEqual(build_candidates(identity_source, ReferencePack(), "923609016", dns_resolver=lambda host: False), [])
+        self.assertEqual(
+            build_candidates(identity_source, ReferencePack(), "923609016", dns_resolver=lambda host: True),
+            [("https://nordicfiskeeksport.no", "name_guess_dns_verified")],
+        )
+
+    def test_populate_website_publishes_only_on_verified_and_gates_downstream_families(self):
+        def fake_fetch_verified(url):
+            return (
+                {"status": "available", "retrieved_at": "2026-09-28T00:00:00Z", "value": {
+                    "final_url": url, "title": "Example AS", "description": "Example does things.",
+                    "main_text_excerpt": "Example AS, org.nr 923 609 016. Contact: post@example.no",
+                    "pages": [{"url": url + "nyheter", "title": "Nyheter", "main_text_excerpt": "Ny kontrakt signert."}],
+                    "social_links": [{"platform": "linkedin", "url": "https://linkedin.com/company/example"}],
+                    "content_sha256": "a" * 64,
+                }},
+                {"requests": 2, "bytes": 100},
+            )
+        builder = EnvelopeBuilder("923609016", run_id="t", started_at="2026-09-28T00:00:00Z", agent_version="1.0.0", code_commit="x")
+        identity_source = {"name": "Example AS", "website": "example.no", "email": "post@example.no", "business_address": {}, "phone": None}
+        populate_website(builder, "923609016", identity_source, ReferencePack(), fetcher=fake_fetch_verified)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["official_website"]["state"], "available")
+        self.assertEqual(envelope["availability"]["social_profiles"]["state"], "available")
+        self.assertEqual(envelope["availability"]["contact_points"]["state"], "available")
+        contact_values = {c["value"] for c in envelope["claims"] if c["field"] == "contact_points"}
+        self.assertIn("post@example.no", contact_values)
+
+    def test_populate_website_withholds_everything_on_conflict(self):
+        def fake_fetch_conflict(url):
+            return (
+                {"status": "available", "retrieved_at": "2026-09-28T00:00:00Z", "value": {
+                    "final_url": url, "title": "Accountant AS",
+                    "main_text_excerpt": "We handle bookkeeping for Example AS. Org.nr 111111111",
+                    "pages": [], "social_links": [], "content_sha256": "b" * 64,
+                }},
+                {"requests": 2, "bytes": 100},
+            )
+        builder = EnvelopeBuilder("923609016", run_id="t", started_at="2026-09-28T00:00:00Z", agent_version="1.0.0", code_commit="x")
+        identity_source = {"name": "Example AS", "website": "accountant.no", "email": None, "business_address": {}, "phone": None}
+        populate_website(builder, "923609016", identity_source, ReferencePack(), fetcher=fake_fetch_conflict)
+        envelope = builder.build(completed_at="2026-09-28T00:01:00Z", terminal_status="completed")
+        self.assertEqual(envelope["availability"]["official_website"]["state"], "not_available")
+        self.assertEqual(envelope["availability"]["official_website"]["reason"], "foreign_org_number_on_page")
+        self.assertFalse([c for c in envelope["claims"] if c["field"] == "official_website"])
 
 
 if __name__ == "__main__":

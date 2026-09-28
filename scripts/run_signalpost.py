@@ -25,6 +25,7 @@ from norway_company_agent.envelope import FIELD_FAMILIES, EnvelopeBuilder  # noq
 from norway_company_agent.evidence import utc_now  # noqa: E402
 from norway_company_agent.foundation import populate_foundation  # noqa: E402
 from norway_company_agent.input_batch import read_batch  # noqa: E402
+from norway_company_agent.site_resolver import populate_website  # noqa: E402
 from norway_company_agent.sourcepacks import build_entity_pack, build_reference_pack, build_update_pack  # noqa: E402
 
 AGENT_VERSION = "1.0.0"
@@ -74,6 +75,7 @@ def process_company(
     *,
     entity_pack,
     update_pack,
+    reference_pack,
     run_id: str,
     started_at: str,
     code_commit: str,
@@ -89,9 +91,17 @@ def process_company(
         return envelope, {"requests": 0, "bytes": 0, "runtime_ms": 0, "budget_exhausted": True}
 
     outcome = populate_foundation(builder, org, entity_pack, update_pack)
-    # Extension point: steps 5-7/9/10 (website identity gate, NAV jobs, registries/references,
-    # refresh diff, synthesis) attach more claims to `builder` here once implemented, gated on
-    # `outcome["identity_ok"]` so a failed identity never reaches an external-lookup layer.
+    if outcome["identity_ok"]:
+        populate_website(builder, org, outcome["entity"], reference_pack)
+    else:
+        for family in ("official_website", "site_description", "social_profiles", "contact_points"):
+            builder.set_availability(family, "failed", "identity_check_failed")
+    # Extension point: steps 6-7/9/10 (NAV jobs, registries/references, refresh diff, synthesis)
+    # attach more claims to `builder` here once implemented, gated on `outcome["identity_ok"]` so a
+    # failed identity never reaches an external-lookup layer.
+    if not outcome["identity_ok"]:
+        for family in ("job_postings", "public_activity", "credentials_and_approvals", "external_references"):
+            builder.set_availability(family, "failed", "identity_check_failed")
     terminal_status = "completed" if outcome["identity_ok"] else "failed"
     envelope = builder.build(completed_at=utc_now(), terminal_status=terminal_status)
     budget.spend(envelope["operations"]["requests"])
@@ -139,7 +149,8 @@ def main() -> None:
 
     entity_pack = build_entity_pack(unique_orgs, cache_dir)
     update_pack = build_update_pack(entity_pack.snapshot)
-    print(f"[run_signalpost] entity pack: {len(entity_pack.index)}/{len(unique_orgs)} found in bulk, {update_pack.pages_fetched} update pages, {len(update_pack.changed)} changed since snapshot", file=sys.stderr)
+    reference_pack = build_reference_pack(cache_dir)
+    print(f"[run_signalpost] entity pack: {len(entity_pack.index)}/{len(unique_orgs)} found in bulk, {update_pack.pages_fetched} update pages, {len(update_pack.changed)} changed since snapshot, {len(reference_pack.wikidata)} wikidata refs, {len(reference_pack.dibk)} dibk refs", file=sys.stderr)
 
     budget = Budget(max_requests=args.max_requests, time_limit_s=args.time_limit)
     computed: dict[str, dict[str, Any]] = {}
@@ -148,7 +159,7 @@ def main() -> None:
 
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futures = {
-            pool.submit(process_company, org, entity_pack=entity_pack, update_pack=update_pack, run_id=run_id, started_at=started_at, code_commit=code_commit, budget=budget): org
+            pool.submit(process_company, org, entity_pack=entity_pack, update_pack=update_pack, reference_pack=reference_pack, run_id=run_id, started_at=started_at, code_commit=code_commit, budget=budget): org
             for org in unique_orgs
         }
         completed_count = 0

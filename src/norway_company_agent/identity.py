@@ -5,6 +5,8 @@ import unicodedata
 import urllib.parse
 from typing import Any
 
+from .input_batch import valid_check_digit
+
 
 LEGAL_AND_GENERIC = {
     "as", "asa", "ans", "da", "enk", "iks", "sa", "sam", "sti", "stiftelsen",
@@ -106,6 +108,23 @@ def assess_website_identity(profile: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _digit_windows(text: str, *, min_run: int = 9) -> set[str]:
+    """Every valid-length organisation-number window inside each naturally-occurring digit run.
+
+    Operates on maximal digit runs from the *original* text (space/dot-separated groups like
+    "923 609 016" or "NO 923 609 016 MVA" collapse into one run once separators are stripped
+    locally around digits), not on the whole page compacted into one blob, so an org number in
+    one part of the page and an unrelated phone number elsewhere never combine into a false window.
+    """
+    runs = re.findall(r"(?:\d[ .\-]?){%d,}" % min_run, text)
+    windows: set[str] = set()
+    for run in runs:
+        digits = re.sub(r"\D", "", run)
+        for start in range(len(digits) - 8):
+            windows.add(digits[start:start + 9])
+    return windows
+
+
 def assess_social_identity(profile: dict[str, Any], link: dict[str, str]) -> dict[str, Any]:
     core = _tokens(profile.get("name"))
     parsed = urllib.parse.urlparse(link.get("url") or "")
@@ -158,3 +177,72 @@ def apply_website_identity_gate(profile: dict[str, Any], website: dict[str, Any]
         "assessment": assessment,
         "quarantined_social_links": len(original) - len(value["social_links"]),
     }
+
+
+PARKED_MARKERS = (
+    "domain is for sale", "domain for sale", "hugedomains", "parked at", "miss hosting",
+    "her flytter snart en ny gjest", "has been informing visitors",
+    "find the best information and most relevant links on all topics related to",
+)
+
+
+def classify_publication_verdict(
+    organisation_number: str,
+    name: str,
+    website_value: dict[str, Any],
+    *,
+    business_address: dict[str, Any] | None = None,
+    phone: str | None = None,
+) -> dict[str, Any]:
+    """The step-5 publication gate: verified / corroborated / conflict / ambiguous.
+
+    `verified` is the only verdict that unlocks site_description/social_profiles/contact_points/
+    public_activity. `corroborated` unlocks only the official_website claim itself. `conflict` and
+    `ambiguous` publish nothing (availability: not_available).
+    """
+    core = _tokens(name)
+    hostname = urllib.parse.urlparse(website_value.get("final_url") or "").hostname or ""
+    structured_names = _structured_names(website_value.get("structured_organisations") or [])
+    homepage_identity_parts = [website_value.get("title"), website_value.get("description"), hostname, *structured_names]
+    page_texts = [website_value.get("main_text_excerpt") or ""]
+    page_texts.extend(str(page.get("main_text_excerpt") or "") for page in website_value.get("pages", []))
+    page_titles = [str(page.get("title") or "") for page in website_value.get("pages", [])]
+    full_text = " ".join(str(part or "") for part in [*homepage_identity_parts, *page_texts, *page_titles])
+    normalized_full_text = unicodedata.normalize("NFKD", full_text).encode("ascii", "ignore").decode().casefold()
+
+    if any(marker in normalized_full_text for marker in PARKED_MARKERS):
+        return {"verdict": "ambiguous", "reason": "parked_or_for_sale_page", "proof_span": None, "other_org_numbers": []}
+
+    org_digits = re.sub(r"\D", "", str(organisation_number or ""))
+    found_org_numbers = _digit_windows(full_text)
+    valid_found = {candidate for candidate in found_org_numbers if valid_check_digit(candidate)}
+
+    if org_digits in valid_found:
+        span_source = next((text for text in [*homepage_identity_parts, *page_texts] if org_digits in re.sub(r"\D", "", str(text or ""))), "")
+        proof_span = str(span_source)[:300] if span_source else None
+        return {"verdict": "verified", "reason": "organisation_number_found_on_page", "proof_span": proof_span, "other_org_numbers": sorted(valid_found - {org_digits})}
+
+    other_valid = sorted(valid_found - {org_digits})
+    if other_valid:
+        return {"verdict": "conflict", "reason": "different_valid_organisation_number_on_page", "proof_span": None, "other_org_numbers": other_valid}
+
+    homepage_token_sets = [set(_tokens(part)) for part in homepage_identity_parts if part]
+    exact_name_match = bool(core and any(set(core).issubset(tokens) for tokens in homepage_token_sets))
+    if len(core) <= 1:
+        # A single-token legal name (e.g. "NORDIC AS") never reaches corroborated: too easy to
+        # collide with an unrelated company of the same short name. Organisation number required.
+        return {"verdict": "ambiguous", "reason": "single_token_name_requires_organisation_number", "proof_span": None, "other_org_numbers": []}
+
+    address_line = str((business_address or {}).get("address") or "")
+    address_match = bool(address_line) and address_line.casefold() in normalized_full_text
+    phone_digits = re.sub(r"\D", "", str(phone or ""))
+    phone_match = bool(phone_digits) and len(phone_digits) >= 8 and phone_digits in re.sub(r"\D", "", full_text)
+    if exact_name_match and (address_match or phone_match):
+        return {
+            "verdict": "corroborated",
+            "reason": "exact_name_plus_address_or_phone_match",
+            "proof_span": None,
+            "other_org_numbers": [],
+        }
+
+    return {"verdict": "ambiguous", "reason": "insufficient_exact_entity_evidence", "proof_span": None, "other_org_numbers": []}
