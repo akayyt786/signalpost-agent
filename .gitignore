@@ -1,0 +1,11 @@
+out/
+cache/
+state/
+data/nav-jobs-index.jsonl.gz.tmp
+signalpost-universe.jsonl.gz
+enheter.csv.gz
+brreg-enheter.csv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
