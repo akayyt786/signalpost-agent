@@ -8,7 +8,7 @@ Signalpost entry submission.
 **Entrant:** Arman Katia (akaykatia9@gmail.com), solo.
 
 **Repository:** https://github.com/akayyt786/signalpost-agent
-**Commit:** <FILL IN AT FREEZE — `git rev-parse HEAD` on the commit being submitted>
+**Commit:** `43d8420a81f61b4e33bace4ab2b140372db38dba` (tag `v1`)
 
 **Run command:**
 ```
