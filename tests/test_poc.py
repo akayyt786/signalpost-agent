@@ -36,6 +36,7 @@ from norway_company_agent.connectors.nav_jobs import populate_jobs  # noqa: E402
 from norway_company_agent.connectors.registries import populate_registries  # noqa: E402
 from norway_company_agent.state_store import diff_and_store, open_store  # noqa: E402
 from norway_company_agent.summarize import build_summary, maybe_llm_rewrite  # noqa: E402
+from scripts.build_site import render_company_page, render_index_row, render_not_found  # noqa: E402
 
 
 class EvidenceTests(unittest.TestCase):
@@ -929,6 +930,50 @@ class SummarizeTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True):
             result = maybe_llm_rewrite(deterministic)
         self.assertEqual(result, deterministic)
+
+
+class BuildSiteTests(unittest.TestCase):
+    def make_envelope(self, org, *, terminal_status="completed"):
+        availability = {f: {"state": "not_available", "reason": "x", "checked_at": "x"} for f in FIELD_FAMILIES}
+        return {
+            "organisation_number": org,
+            "run": {"run_id": "t", "started_at": "x", "completed_at": "x", "terminal_status": terminal_status, "agent_version": "1.0.0", "code_commit": "x"},
+            "claims": [], "evidence": [], "availability": availability, "changes": [], "errors": [],
+            "summary": {"text": "", "not_found": [], "generator": "deterministic_v1"},
+            "operations": {"requests": 0, "bytes": 0, "runtime_ms": 0, "third_party_cost_usd": 0.0},
+        }
+
+    def test_failed_row_never_dropped_and_marked_parse_error(self):
+        envelope = self.make_envelope("810034881", terminal_status="failed")
+        row_html = render_index_row(envelope)
+        self.assertIn("810034881", row_html)
+        self.assertIn("PARSE_ERROR", row_html)
+
+    def test_company_page_renders_without_crashing_on_an_empty_envelope(self):
+        envelope = self.make_envelope("923609016")
+        html_out = render_company_page(envelope)
+        self.assertIn("923609016", html_out)
+        self.assertIn("NOT FOUND", html_out)
+
+    def test_not_found_lists_every_gap_family_with_its_reason(self):
+        availability = {f: {"state": "not_available", "reason": "no_record_returned", "checked_at": "x"} for f in FIELD_FAMILIES}
+        html_out = render_not_found(availability)
+        for family in FIELD_FAMILIES:
+            self.assertIn("no_record_returned", html_out)
+        self.assertIn("NOT FOUND", html_out)
+
+    def test_claim_values_are_html_escaped(self):
+        envelope = self.make_envelope("923609016")
+        envelope["claims"] = [{
+            "claim_id": "a", "field": "site_description", "subkey": None,
+            "value": '<script>alert(1)</script>', "unit": None, "reporting_period": None,
+            "availability": "available", "confidence": 1.0, "method": "test", "evidence_ids": [],
+            "first_seen": "x", "last_seen": "x",
+        }]
+        envelope["availability"]["site_description"] = {"state": "available", "reason": "found", "checked_at": "x"}
+        html_out = render_company_page(envelope)
+        self.assertNotIn("<script>alert(1)</script>", html_out)
+        self.assertIn("&lt;script&gt;", html_out)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,325 @@
+/* SIGNALPOST — Tactical Telemetry design tokens (locked 2026-09-28). Native CSS, no framework. */
+
+:root {
+  --bg: #0A0A0A;
+  --panel: #121212;
+  --text: #EAEAEA;
+  --muted: #8A8A8A;
+  --line: #2A2A2A;
+  --ok: #4AF626;
+  --risk: #FF2A2A;
+  --warn: #E8A33D;
+  --dim: #3A3A3A;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
+}
+
+body { padding-bottom: 4rem; }
+
+a { color: var(--ok); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+
+/* Header bar */
+.bar {
+  border-bottom: 1px solid var(--line);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.brand {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  font-size: 1.1rem;
+}
+.brand .sub {
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.run-meta {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+.run-meta > div { display: flex; flex-direction: column; gap: 0.15rem; }
+.run-meta dt { color: var(--muted); letter-spacing: 0.06em; }
+.run-meta dd { margin: 0; color: var(--text); }
+
+main { padding: 1rem 1.25rem; max-width: 1400px; margin: 0 auto; }
+
+/* Controls */
+.controls { margin-bottom: 0.75rem; }
+#search {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 0.6rem 0.75rem;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+#search::placeholder { color: var(--muted); }
+
+/* Company table */
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+thead th:hover { color: var(--text); }
+tbody tr { border-bottom: 1px solid var(--line); }
+tbody tr:hover { background: var(--panel); }
+tbody td {
+  padding: 0.5rem 0.6rem;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+tbody td.name { font-family: inherit; font-size: 0.85rem; }
+tbody td a { color: var(--text); }
+tbody td a:hover { color: var(--ok); }
+
+/* Coverage barcode: 17 ticks, one per field family, the signature element */
+.barcode { display: inline-flex; gap: 2px; }
+.tick {
+  width: 6px;
+  height: 14px;
+  background: var(--dim);
+  border: 1px solid var(--line);
+}
+.tick.available { background: var(--ok); border-color: var(--ok); }
+.tick.not_available { background: transparent; border-color: var(--line); }
+.tick.ambiguous { background: var(--warn); border-color: var(--warn); }
+.tick.blocked, .tick.failed { background: var(--risk); border-color: var(--risk); }
+.tick.not_applicable { background: transparent; border-color: var(--dim); opacity: 0.4; }
+
+#empty-state {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  color: var(--muted);
+  padding: 3rem 0;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* Company detail page */
+.dossier {
+  border: 1px solid var(--line);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: baseline;
+}
+.dossier .unit {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.dossier .name {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  font-size: 1.3rem;
+}
+.status-badge {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--ok);
+  color: var(--ok);
+}
+.status-badge.risk { border-color: var(--risk); color: var(--risk); }
+
+.summary-panel {
+  border: 1px solid var(--line);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+.summary-panel .not-found {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.summary-panel .generator {
+  margin-top: 0.5rem;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.65rem;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+section.zone {
+  border: 1px solid var(--line);
+  margin-bottom: 1.25rem;
+}
+section.zone > h2 {
+  margin: 0;
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+section.zone.external { border-color: var(--ok); }
+section.zone.external > h2 { color: var(--ok); border-color: var(--line); }
+
+.claim-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.25rem 1rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+.claim-row:last-child { border-bottom: none; }
+.claim-field {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.claim-value { font-size: 0.9rem; word-break: break-word; }
+.claim-meta {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+}
+.badge {
+  display: inline-block;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--line);
+  text-transform: uppercase;
+}
+.badge.available { border-color: var(--ok); color: var(--ok); }
+.badge.not_available, .badge.not_applicable { border-color: var(--dim); color: var(--muted); }
+.badge.ambiguous { border-color: var(--warn); color: var(--warn); }
+.badge.blocked, .badge.failed { border-color: var(--risk); color: var(--risk); }
+.proof-span {
+  grid-column: 1 / -1;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border-left: 2px solid var(--line);
+  padding-left: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.not-found-ledger { padding: 0.6rem 1rem; }
+.not-found-ledger .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--line);
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+.not-found-ledger .row:last-child { border-bottom: none; }
+.not-found-ledger .reason { color: var(--muted); }
+
+.change-row {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+.change-row:last-child { border-bottom: none; }
+.change-row .old { color: var(--muted); text-decoration: line-through; }
+.change-row .new { color: var(--text); }
+.change-row .delta { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; font-size: 0.65rem; }
+.change-row .delta.new_value { color: var(--ok); }
+.change-row .delta.changed_value { color: var(--warn); }
+.change-row .delta.removed_value { color: var(--risk); }
+.change-row .delta.deferred { color: var(--muted); }
+
+.error-row { color: var(--risk); }
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+/* Mobile: explicit fallback, not squeeze */
+@media (max-width: 640px) {
+  table, thead, tbody, tr { display: block; width: 100%; }
+  thead { display: none; }
+  tbody tr {
+    display: block;
+    border: 1px solid var(--line);
+    margin-bottom: 0.6rem;
+    padding: 0.5rem 0.6rem;
+  }
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    border: none;
+  }
+  tbody td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 0.75rem;
+  }
+  .barcode { flex-wrap: wrap; max-width: 160px; }
+  .claim-row { grid-template-columns: 1fr; }
+  .claim-meta { text-align: left; }
+  .dossier { flex-direction: column; }
+}
