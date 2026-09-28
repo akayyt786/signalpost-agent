@@ -2,9 +2,9 @@ out/
 cache/
 state/
 data/nav-jobs-index.jsonl.gz.tmp
-signalpost-universe.jsonl.gz
-enheter.csv.gz
-brreg-enheter.csv
+signalpost-company-universe-2025.jsonl.gz
+smoke-companies.jsonl
+entry-companies.jsonl
 .venv/
 __pycache__/
 *.pyc

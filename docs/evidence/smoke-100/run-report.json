@@ -1,0 +1,29 @@
+{
+  "run_id": "local-1790590787",
+  "started_at": "2026-09-28T10:19:47.256322Z",
+  "completed_at": "2026-09-28T10:22:54.787939Z",
+  "input_rows": 100,
+  "unique_companies": 100,
+  "emitted_envelopes": 100,
+  "registry_snapshot": {
+    "url": "https://data.brreg.no/enhetsregisteret/api/enheter/lastned/csv",
+    "etag": "e9fda929ba48e3d2383338106fcb91d1",
+    "last_modified": "Mon Sep 28 04:27:29 CEST 2026",
+    "downloaded_at": "2026-09-28T08:42:36.977809Z",
+    "sha256": "c0df09c3fbd654e61a0962043e87a5daed8e5b7093be297cc63afb81e2239deb"
+  },
+  "operations": {
+    "requests": 554,
+    "bytes": 11948506,
+    "p50_ms": 12042,
+    "p95_ms": 36984,
+    "third_party_cost_usd": 0.0
+  },
+  "budget_exhausted": false,
+  "degradations": [],
+  "validation": {
+    "passed": true,
+    "expected_count": 100,
+    "emitted_count": 100
+  }
+}

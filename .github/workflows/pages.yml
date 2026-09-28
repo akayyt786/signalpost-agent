@@ -5,10 +5,11 @@ on:
   push:
     branches: [main]
     paths:
-      - "out/envelopes.jsonl"
-      - "out/run-report.json"
       - "scripts/build_site.py"
       - "scripts/site_assets/**"
+      - "scripts/run_signalpost.py"
+      - "src/norway_company_agent/**"
+      - "run.sh"
 
 permissions:
   contents: read
@@ -25,10 +26,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - name: Build site
+      # out/ is gitignored by design (generated, per-run, not source) - this job regenerates a
+      # live 100-company smoke run and its site on every publish, rather than serving a stale
+      # committed snapshot, so the published URL always reflects the current code on main.
+      - name: Run the 100-company smoke test and build the site
         run: |
           uv sync --frozen
-          uv run python scripts/build_site.py --envelopes out/envelopes.jsonl --report out/run-report.json --out out/site
+          curl -sSL -o universe.jsonl.gz https://builderr.ai/signalpost-company-universe-2025.jsonl.gz
+          uv run python select_entry_batch.py --universe universe.jsonl.gz --count 100 --output smoke-companies.jsonl --seed 20260823
+          ./run.sh smoke-companies.jsonl out/smoke
+          uv run python scripts/build_site.py --envelopes out/smoke/envelopes.jsonl --report out/smoke/run-report.json --out out/site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out/site

@@ -1,0 +1,142 @@
+{
+  "scorer": "signalpost_local_proxy_v1",
+  "claim_boundary": "Local proxy computed from our own output only. Recall/coverage cannot reproduce the organiser's hidden pooled-evidence score; precision, evidence-completeness, synthesis self-consistency, UX structure, and refresh idempotency are measured with certainty.",
+  "profiles": 100,
+  "rubric_weights": {
+    "recall_and_coverage": 50,
+    "precision_and_evidence": 30,
+    "synthesis": 12,
+    "ux": 8
+  },
+  "coverage": {
+    "note": "Self-measured raw coverage, not comparable to the organiser's pooled-evidence score. Track deltas over time, not the absolute number.",
+    "per_family": {
+      "legal_identity": {
+        "company_coverage": 1.0,
+        "companies_with_data": 100,
+        "total_claims": 100
+      },
+      "registered_address": {
+        "company_coverage": 1.0,
+        "companies_with_data": 100,
+        "total_claims": 200
+      },
+      "industry": {
+        "company_coverage": 1.0,
+        "companies_with_data": 100,
+        "total_claims": 100
+      },
+      "employees": {
+        "company_coverage": 0.1,
+        "companies_with_data": 10,
+        "total_claims": 10
+      },
+      "status_flags": {
+        "company_coverage": 1.0,
+        "companies_with_data": 100,
+        "total_claims": 100
+      },
+      "annual_accounts": {
+        "company_coverage": 1.0,
+        "companies_with_data": 100,
+        "total_claims": 655
+      },
+      "roles": {
+        "company_coverage": 1.0,
+        "companies_with_data": 100,
+        "total_claims": 388
+      },
+      "group_structure": {
+        "company_coverage": 0.08,
+        "companies_with_data": 8,
+        "total_claims": 12
+      },
+      "locations": {
+        "company_coverage": 0.73,
+        "companies_with_data": 73,
+        "total_claims": 76
+      },
+      "official_website": {
+        "company_coverage": 0.0,
+        "companies_with_data": 0,
+        "total_claims": 0
+      },
+      "site_description": {
+        "company_coverage": 0.0,
+        "companies_with_data": 0,
+        "total_claims": 0
+      },
+      "social_profiles": {
+        "company_coverage": 0.0,
+        "companies_with_data": 0,
+        "total_claims": 0
+      },
+      "contact_points": {
+        "company_coverage": 0.0,
+        "companies_with_data": 0,
+        "total_claims": 0
+      },
+      "job_postings": {
+        "company_coverage": 0.0,
+        "companies_with_data": 0,
+        "total_claims": 0
+      },
+      "public_activity": {
+        "company_coverage": 0.0,
+        "companies_with_data": 0,
+        "total_claims": 0
+      },
+      "credentials_and_approvals": {
+        "company_coverage": 0.01,
+        "companies_with_data": 1,
+        "total_claims": 1
+      },
+      "external_references": {
+        "company_coverage": 0.0,
+        "companies_with_data": 0,
+        "total_claims": 0
+      }
+    }
+  },
+  "precision_and_evidence": {
+    "points": 30.0,
+    "total_available_claims": 1642,
+    "evidence_completeness": 1.0,
+    "wrong_company_publications": [],
+    "zero_wrong_company_publications": true
+  },
+  "synthesis": {
+    "points": 12.0,
+    "non_empty_summary_rate": 1.0,
+    "gap_list_self_consistency_rate": 1.0,
+    "generators": {
+      "deterministic_v1": 100
+    }
+  },
+  "ux": {
+    "points": 8.0,
+    "checks": {
+      "index_exists": true,
+      "style_and_script_exist": true,
+      "one_company_page_per_envelope": true,
+      "mobile_breakpoint_present": true,
+      "focus_visible_style_present": true
+    },
+    "company_pages_found": 100
+  },
+  "refresh": {
+    "measured": false,
+    "note": "pass --previous <envelopes.jsonl> to measure false-change rate"
+  },
+  "measurable_points": 50.0,
+  "measurable_points_of": 50,
+  "qualification_gates": {
+    "terminal_batch_contract": true,
+    "official_identity_complete": true,
+    "zero_wrong_company_publications": true,
+    "evidence_complete": true,
+    "refresh_idempotent": true
+  },
+  "qualification_gates_passed": true,
+  "unmet_gates": []
+}
