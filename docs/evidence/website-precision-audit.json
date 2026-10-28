@@ -5,36 +5,25 @@
     "selected": 2000,
     "excluded_organisation_numbers": 0,
     "excluded_website_hosts": 0,
-    "registry_rows": 1179354,
-    "registry_rows_with_website_after_exclusion": 114183,
+    "registry_rows": 1179489,
+    "registry_rows_with_website_after_exclusion": 114181,
     "unique_hosts_selected": 2000,
-    "registry_org_sequence_sha256": "beec799d64e80f938bb7d111b0ac3030ddd90a05b9d25188c357cc9553749279"
+    "registry_org_sequence_sha256": "d3898f79ae918e15ebe589f2a38be49c8951f6bc1f3c4e503430904643ae3301"
   },
   "audited": 2000,
-  "published": 150,
-  "verified": 93,
-  "corroborated": 57,
+  "published": 153,
+  "verified": 94,
+  "corroborated": 59,
   "reason_counts": {
-    "no_candidate_reachable": 593,
-    "insufficient_exact_entity_evidence": 943,
-    "single_token_name_requires_organisation_number": 212,
-    "foreign_org_number_on_page": 99,
-    "verified_by_organisation_number": 93,
-    "corroborated_by_name_and_address_or_phone": 57,
-    "parked_or_for_sale_page": 3
+    "no_candidate_reachable": 597,
+    "insufficient_exact_entity_evidence": 936,
+    "single_token_name_requires_organisation_number": 210,
+    "foreign_org_number_on_page": 100,
+    "verified_by_organisation_number": 94,
+    "corroborated_by_name_and_address_or_phone": 59,
+    "parked_or_for_sale_page": 4
   },
   "published_for_hand_review": [
-    {
-      "organisation_number": "974767880",
-      "name": "NORGES TEKNISK-NATURVITENSKAPELIGE UNIVERSITET NTNU",
-      "registry_website": "www.ntnu.no/",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://www.ntnu.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "ks 8900, Torgarden\n7491 Trondheim\nNTNU i Gjøvik\nPostboks 191\n2802 Gjøvik\nNTNU i Ålesund\nPostboks 1517\n6025 Ålesund\nFakturaadresse\nOrganisasjonsnummer\n974 767 880",
-      "source_url": "https://www.ntnu.no/"
-    },
     {
       "organisation_number": "983923577",
       "name": "VOSS HANG OG PARAGLIDER KLUBB",
@@ -58,15 +47,15 @@
       "source_url": "https://www.ottestadil.no"
     },
     {
-      "organisation_number": "985828490",
-      "name": "ANNA SZULC PSYKOLOGPRAKSIS",
-      "registry_website": "www.annaszulc.no",
+      "organisation_number": "974767880",
+      "name": "NORGES TEKNISK-NATURVITENSKAPELIGE UNIVERSITET NTNU",
+      "registry_website": "www.ntnu.no/",
       "state": "available",
       "reason": "verified_by_organisation_number",
-      "published_url": "https://www.annaszulc.no/",
+      "published_url": "https://www.ntnu.no/",
       "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "TFELDTS GT 9A, 0253 Oslo\n \nAnna M. Szulc\nAnna Szulc Psykologpraksis\nHuitfeldts gt. 9A\n0253 Oslo\nEpost: psykolog@annaszulc.no\nTlf: 917 92 543\nOrg.nr.: 985828490\nAlt innhold er opphavsrettslig beskyttet. © Anna M. Szulc",
-      "source_url": "https://www.annaszulc.no"
+      "claim_span": "ks 8900, Torgarden\n7491 Trondheim\nNTNU i Gjøvik\nPostboks 191\n2802 Gjøvik\nNTNU i Ålesund\nPostboks 1517\n6025 Ålesund\nFakturaadresse\nOrganisasjonsnummer\n974 767 880",
+      "source_url": "https://www.ntnu.no/"
     },
     {
       "organisation_number": "916178832",
@@ -78,6 +67,28 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.stalheim.com"
+    },
+    {
+      "organisation_number": "985828490",
+      "name": "ANNA SZULC PSYKOLOGPRAKSIS",
+      "registry_website": "www.annaszulc.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://www.annaszulc.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "TFELDTS GT 9A, 0253 Oslo\n \nAnna M. Szulc\nAnna Szulc Psykologpraksis\nHuitfeldts gt. 9A\n0253 Oslo\nEpost: psykolog@annaszulc.no\nTlf: 917 92 543\nOrg.nr.: 985828490\nAlt innhold er opphavsrettslig beskyttet. © Anna M. Szulc",
+      "source_url": "https://www.annaszulc.no"
+    },
+    {
+      "organisation_number": "989245228",
+      "name": "NORSK BILTRANSPORT AS",
+      "registry_website": "www.norskbiltransport.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://norskbiltransport.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "å +47 648 08 558\nEpost til: [email protected]\nChat: Åpne chat (08:00 - 16:00)\nBesøksadresse\nTømmersvingen 3\n3414 LIER\nSende faktura\nSendes på EHF til 989 245 228\nPDF faktura sendes til: [email protected]\nFor andre ikke-transportrelaterte henvendelser\nEpost: [email protected]\nReklamasjon på transport\nFor å rekl",
+      "source_url": "https://www.norskbiltransport.no"
     },
     {
       "organisation_number": "986389180",
@@ -113,17 +124,6 @@
       "source_url": "https://www.foldvik.com"
     },
     {
-      "organisation_number": "996310795",
-      "name": "AMCAR STRYN",
-      "registry_website": "amcarstryn.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://amcarstryn.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "dset, 6783 Stryn\nTelefon: 918 70 805\npost@amcarstryn.no\nHans Auflem\nPresident\nTelefon: 918 70 805\nPer Vidar Roset\nKONTONUMMER: \n3705.34.23354\nOrg nr. 996 310 795\nVips tlf. 51 31 20\nSend oss en melding",
-      "source_url": "https://amcarstryn.no"
-    },
-    {
       "organisation_number": "932872013",
       "name": "BYGDAGYM AS",
       "registry_website": "bygdagym.no",
@@ -135,15 +135,15 @@
       "source_url": "https://bygdagym.no"
     },
     {
-      "organisation_number": "971515732",
-      "name": "YSST HMS",
-      "registry_website": "www.ysst.no",
+      "organisation_number": "996310795",
+      "name": "AMCAR STRYN",
+      "registry_website": "amcarstryn.no",
       "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://ysst.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.ysst.no"
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://amcarstryn.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "dset, 6783 Stryn\nTelefon: 918 70 805\npost@amcarstryn.no\nHans Auflem\nPresident\nTelefon: 918 70 805\nPer Vidar Roset\nKONTONUMMER: \n3705.34.23354\nOrg nr. 996 310 795\nVips tlf. 51 31 20\nSend oss en melding",
+      "source_url": "https://amcarstryn.no"
     },
     {
       "organisation_number": "981310950",
@@ -157,6 +157,17 @@
       "source_url": "https://www.kommunikasjon.no"
     },
     {
+      "organisation_number": "971515732",
+      "name": "YSST HMS",
+      "registry_website": "www.ysst.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://ysst.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.ysst.no"
+    },
+    {
       "organisation_number": "983596428",
       "name": "ACTA BARN OG UNGE I NORMISJON",
       "registry_website": "www.acta.as",
@@ -168,17 +179,6 @@
       "source_url": "https://www.acta.as"
     },
     {
-      "organisation_number": "845933162",
-      "name": "SVEN KVIA AS",
-      "registry_website": "www.kvia.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.kvia.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.kvia.no"
-    },
-    {
       "organisation_number": "930960640",
       "name": "SAVALEN NATUR OG MILJØ",
       "registry_website": "savalennaturmiljo.no",
@@ -188,6 +188,17 @@
       "method": "identity_gate_verified_v1:registry_website",
       "claim_span": "uks-, jakt og fiske-, andre friluftsinteresser, samt det biologiske mangfoldet i Savalen-regionen skal kunne fungere i et samspill.\nOrganisasjonsnr.: 930960640\nStyret består av:\nBjørn Brendbakken\nThor Dalvang\nLars Engen\nTron Søvik",
       "source_url": "https://savalennaturmiljo.no"
+    },
+    {
+      "organisation_number": "845933162",
+      "name": "SVEN KVIA AS",
+      "registry_website": "www.kvia.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.kvia.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.kvia.no"
     },
     {
       "organisation_number": "930591289",
@@ -234,17 +245,6 @@
       "source_url": "https://grorudstrykerne.no"
     },
     {
-      "organisation_number": "983382355",
-      "name": "PETORO AS",
-      "registry_website": "petoro.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://petoro.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "rt og kontaktdetaljer.\nBesøksadresse\nØvre Strandgate 124\n4005 Stavanger\nPostadresse\nPostboks 300 Sentrum\n4002 Stavanger\nForetaksregisteret\norg.nr: NO 983 382 355\nKristin Fejerskov Kragseth\nAdministrerende direktør\nFotokreditering: Anne Lise Norheim\nJonny Mæland\nFinansdirektør\nFotokreditering: Anne Lise Norheim",
-      "source_url": "https://petoro.no"
-    },
-    {
       "organisation_number": "997779355",
       "name": "EMENN DA",
       "registry_website": "www.krystallfoto.no",
@@ -254,6 +254,17 @@
       "method": "identity_gate_verified_v1:registry_website",
       "claim_span": " siden 2009, fremstått som en ledende aktør i denne bransjen.\nI august 2012, overtok samboeren min og jeg virksomheten og eies av EMenn DA (Org.nr NO 997 779 355). Vi startet opp en forretning i Drammen, men grunnet uforutsette omstendigheter var vi tvunget til å ha et lite opphold på et år fra midten av 2013.",
       "source_url": "https://www.krystallfoto.no"
+    },
+    {
+      "organisation_number": "983382355",
+      "name": "PETORO AS",
+      "registry_website": "petoro.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://petoro.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "rt og kontaktdetaljer.\nBesøksadresse\nØvre Strandgate 124\n4005 Stavanger\nPostadresse\nPostboks 300 Sentrum\n4002 Stavanger\nForetaksregisteret\norg.nr: NO 983 382 355\nKristin Fejerskov Kragseth\nAdministrerende direktør\nFotokreditering: Anne Lise Norheim\nJonny Mæland\nFinansdirektør\nFotokreditering: Anne Lise Norheim",
+      "source_url": "https://petoro.no"
     },
     {
       "organisation_number": "994857495",
@@ -278,17 +289,6 @@
       "source_url": "https://www.kistefos-vilt.no"
     },
     {
-      "organisation_number": "979358717",
-      "name": "STOKKELAND INT CONSULTING AS",
-      "registry_website": "www.sic-as.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://www.sic-as.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "Org. number 979358717",
-      "source_url": "https://www.sic-as.no"
-    },
-    {
       "organisation_number": "982129265",
       "name": "FJELLHAMAR FOTBALLKLUBB",
       "registry_website": "www.fjellhamarfotball.no",
@@ -300,6 +300,17 @@
       "source_url": "https://www.fjellhamarfotball.no"
     },
     {
+      "organisation_number": "979358717",
+      "name": "STOKKELAND INT CONSULTING AS",
+      "registry_website": "www.sic-as.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://www.sic-as.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "Org. number 979358717",
+      "source_url": "https://www.sic-as.no"
+    },
+    {
       "organisation_number": "948480468",
       "name": "FOLLDAL ELEKTRO AS",
       "registry_website": "www.folldalelektro.no",
@@ -309,6 +320,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.folldalelektro.no"
+    },
+    {
+      "organisation_number": "979956061",
+      "name": "SENTIO RESEARCH NORGE AS",
+      "registry_website": "www.sentio.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://sentio.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "Sentio Research Norge AS\nOrg nr 979 956 061\nMellomila 56\n7018 Trondheim\npost@sentio.no",
+      "source_url": "https://www.sentio.no"
     },
     {
       "organisation_number": "984075162",
@@ -333,17 +355,6 @@
       "source_url": "https://Telemarkrusfriungdom.no"
     },
     {
-      "organisation_number": "979956061",
-      "name": "SENTIO RESEARCH NORGE AS",
-      "registry_website": "www.sentio.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://sentio.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "Sentio Research Norge AS\nOrg nr 979 956 061\nMellomila 56\n7018 Trondheim\npost@sentio.no",
-      "source_url": "https://www.sentio.no"
-    },
-    {
       "organisation_number": "888982302",
       "name": "LUNDENESET VGS AS",
       "registry_website": "www.lvs.no",
@@ -353,17 +364,6 @@
       "method": "identity_gate_verified_v1:registry_website",
       "claim_span": "e deg videre.\nPost- og besøksadresse:\n\t\t\t\tLundeneset vgs\n\t\t\t\tLundanesvegen 37\n\t\t\t\t5582 Ølensvåg\n\t\t\t\nTelefon\n53 77 51 00\nOrganisasjon og konto\nOrg.nr. 888 982 302\nKontonr. 8220.02.90913",
       "source_url": "https://www.lvs.no"
-    },
-    {
-      "organisation_number": "997435192",
-      "name": "FRIGG TECHNOLOGIES AS",
-      "registry_website": "www.cuboid.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://friggkantine.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "\tBesøk oss\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tØvre Eikervei 177 \n3048 Drammen, Norway\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t\tOrganisasjonsnummer\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n997 435 192\nMøt menneskene",
-      "source_url": "https://www.cuboid.no"
     },
     {
       "organisation_number": "993940526",
@@ -386,6 +386,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.maurabygg.no"
+    },
+    {
+      "organisation_number": "997435192",
+      "name": "FRIGG TECHNOLOGIES AS",
+      "registry_website": "www.cuboid.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://friggkantine.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "\tBesøk oss\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\tØvre Eikervei 177 \n3048 Drammen, Norway\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t\tOrganisasjonsnummer\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n997 435 192\nMøt menneskene",
+      "source_url": "https://www.cuboid.no"
     },
     {
       "organisation_number": "988938874",
@@ -531,6 +542,17 @@
       "source_url": "https://www.eggumrevisjon.no"
     },
     {
+      "organisation_number": "932932318",
+      "name": "OSLO TAKRENNER STAUSLAND",
+      "registry_website": "oslotakrenner.no/",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://oslotakrenner.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://oslotakrenner.no/"
+    },
+    {
       "organisation_number": "892700362",
       "name": "HARDDISK DATAPARTNER AS",
       "registry_website": "www.harddisk.no",
@@ -542,17 +564,6 @@
       "source_url": "https://www.harddisk.no"
     },
     {
-      "organisation_number": "931548794",
-      "name": "EIDSVOLLPULS AS",
-      "registry_website": "eidsvollpuls.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://eidsvollpuls.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "da ser ut i vår tid, skal kunne finne det her.\nEidsvollPuls er en uavhengig lokalavis for Eidsvoll, drevet av EidsvollPuls AS med organisasjonsnummer 931 548 794. Det er Bjørn Hytjanstorp som er ansvarlig redaktør og eneste faste skribent. Redaksjonen arbeider selvsagt etter prinsippene i Vær Varsom-plakaten o",
-      "source_url": "https://eidsvollpuls.no"
-    },
-    {
       "organisation_number": "985616361",
       "name": "NORDIC CHEMICAL SOLUTIONS AS",
       "registry_website": "www.ncsas.no",
@@ -562,6 +573,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.ncsas.no"
+    },
+    {
+      "organisation_number": "931548794",
+      "name": "EIDSVOLLPULS AS",
+      "registry_website": "eidsvollpuls.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://eidsvollpuls.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "da ser ut i vår tid, skal kunne finne det her.\nEidsvollPuls er en uavhengig lokalavis for Eidsvoll, drevet av EidsvollPuls AS med organisasjonsnummer 931 548 794. Det er Bjørn Hytjanstorp som er ansvarlig redaktør og eneste faste skribent. Redaksjonen arbeider selvsagt etter prinsippene i Vær Varsom-plakaten o",
+      "source_url": "https://eidsvollpuls.no"
     },
     {
       "organisation_number": "988241695",
@@ -685,17 +707,6 @@
       "source_url": "https://fjordheim.no"
     },
     {
-      "organisation_number": "995906260",
-      "name": "BOGAFJELL SYKLEKLUBB",
-      "registry_website": "www.bogafjellsykleklubb.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://www.bogafjellsykleklubb.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "KONTAKT OSS \n \n \n \n   KONTAKT OSS\n \n \n \npost@bogafjellsykleklubb.no\nLyngholen 40, 4324 Sandnes\nOrg nr 995 906 260",
-      "source_url": "https://www.bogafjellsykleklubb.no"
-    },
-    {
       "organisation_number": "913416988",
       "name": "INDRE KÅFJORD BARNE- OG UNGDOMSSKOLE",
       "registry_website": "www.ikskole.no/",
@@ -718,6 +729,17 @@
       "source_url": "https://www.bjordal-madsen.no"
     },
     {
+      "organisation_number": "985135282",
+      "name": "TINDE HYTTER AS",
+      "registry_website": "www.tindehytter.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.tindehytter.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.tindehytter.no"
+    },
+    {
       "organisation_number": "982855381",
       "name": "KYSTLAGET SALTA",
       "registry_website": "www.salta.no",
@@ -729,15 +751,26 @@
       "source_url": "https://www.salta.no"
     },
     {
-      "organisation_number": "985135282",
-      "name": "TINDE HYTTER AS",
-      "registry_website": "www.tindehytter.no",
+      "organisation_number": "827442852",
+      "name": "MASKINSALG AS",
+      "registry_website": "maskinsalg.no/",
       "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.tindehytter.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.tindehytter.no"
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://maskinsalg.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "Mandag til fredag: 08.00 - 16.30\nLørdager: 09.00 - 14.00\nBedriftsinformasjon\nMaskinsalg AS Org.nr: 827 442 852\nDine data, dine valg\nVi ønsker at du skal være trygg når du bruker Maskinsalg AS. Derfor benytter vi cookies for å sikre at du får en best mulig bruk",
+      "source_url": "https://maskinsalg.no/"
+    },
+    {
+      "organisation_number": "954575152",
+      "name": "BRANDBU OG TINGELSTAD ALMENNING",
+      "registry_website": "www.b-t-a.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://www.b-t-a.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "Om oss\nBrandbu og Tingelstad Almenning org.nr 954 575 152 eies av 480 allmenningsberettigede eiendommer med bruksrett i allmenningen. Kriteriet for at en eiendom skal ha bruksrett er at den ut fra dyrket are",
+      "source_url": "https://www.b-t-a.no"
     },
     {
       "organisation_number": "922733031",
@@ -760,17 +793,6 @@
       "method": "identity_gate_verified_v1:registry_website",
       "claim_span": "r\nElektronisk postboks\npost @ bygdecrew.no\nStyret\nstyret @ bygdecrew.no\nPostadresse\nBygdecrew\nPostboks 47\n4096 Randaberg\nAnnen informasjon\nOrgnummer: 990 209 413\nKontonummer: 3204.20.92214",
       "source_url": "https://www.bygdecrew.no"
-    },
-    {
-      "organisation_number": "954575152",
-      "name": "BRANDBU OG TINGELSTAD ALMENNING",
-      "registry_website": "www.b-t-a.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://www.b-t-a.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "Om oss\nBrandbu og Tingelstad Almenning org.nr 954 575 152 eies av 480 allmenningsberettigede eiendommer med bruksrett i allmenningen. Kriteriet for at en eiendom skal ha bruksrett er at den ut fra dyrket are",
-      "source_url": "https://www.b-t-a.no"
     },
     {
       "organisation_number": "937164203",
@@ -817,17 +839,6 @@
       "source_url": "https://fk-pensjon.no"
     },
     {
-      "organisation_number": "920775543",
-      "name": "EYE-SHARE AS",
-      "registry_website": "www.eye-share.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://eye-share.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "pfordrer til å sende fakturaer elektronisk når det er mulig.\nSelskapets juridiske navn: Eye-share AS\nAdresse for elektronisk faktura EDI/GLN/OVT\n0192:920775543\nPeppol Directory\nVennligst legg inn PDF hvis ERP-systemet ditt tillater dette.\nHvis din bedrift ikke har mulighet til å sende elektronisk faktura, ka",
-      "source_url": "https://www.eye-share.no"
-    },
-    {
       "organisation_number": "916972393",
       "name": "HOLMEN HUSKY AS",
       "registry_website": "holmenhusky.no",
@@ -837,6 +848,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://holmenhusky.no"
+    },
+    {
+      "organisation_number": "920775543",
+      "name": "EYE-SHARE AS",
+      "registry_website": "www.eye-share.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://eye-share.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "pfordrer til å sende fakturaer elektronisk når det er mulig.\nSelskapets juridiske navn: Eye-share AS\nAdresse for elektronisk faktura EDI/GLN/OVT\n0192:920775543\nPeppol Directory\nVennligst legg inn PDF hvis ERP-systemet ditt tillater dette.\nHvis din bedrift ikke har mulighet til å sende elektronisk faktura, ka",
+      "source_url": "https://www.eye-share.no"
     },
     {
       "organisation_number": "984059140",
@@ -850,6 +872,17 @@
       "source_url": "https://www.granvin-il.no"
     },
     {
+      "organisation_number": "990607397",
+      "name": "ATTEND IT AS",
+      "registry_website": "www.attend.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://attend.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.attend.no"
+    },
+    {
       "organisation_number": "935529751",
       "name": "LARSEN OPTIKK AS",
       "registry_website": "www.larsenoptikk.no",
@@ -861,15 +894,15 @@
       "source_url": "https://www.larsenoptikk.no"
     },
     {
-      "organisation_number": "990607397",
-      "name": "ATTEND IT AS",
-      "registry_website": "www.attend.no",
+      "organisation_number": "911749122",
+      "name": "KK AUTO AS",
+      "registry_website": "www.kkauto.no",
       "state": "available",
       "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://attend.no/",
+      "published_url": "https://kkauto.no/",
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
-      "source_url": "https://www.attend.no"
+      "source_url": "https://www.kkauto.no"
     },
     {
       "organisation_number": "927761165",
@@ -894,17 +927,6 @@
       "source_url": "https://www.thequailcoop.com"
     },
     {
-      "organisation_number": "911749122",
-      "name": "KK AUTO AS",
-      "registry_website": "www.kkauto.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://kkauto.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.kkauto.no"
-    },
-    {
       "organisation_number": "852642262",
       "name": "LUBECO AS",
       "registry_website": "www.lubeco.no",
@@ -927,17 +949,6 @@
       "source_url": "https://www.sogelaget.no"
     },
     {
-      "organisation_number": "885621252",
-      "name": "EIKA BOLIGKREDITT AS",
-      "registry_website": "www.eikbol.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.eikbol.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.eikbol.no"
-    },
-    {
       "organisation_number": "935055229",
       "name": "SENTER FOR VÆREKRAFT DA",
       "registry_website": "senterforværekraft.no",
@@ -947,6 +958,17 @@
       "method": "identity_gate_verified_v1:registry_email_domain",
       "claim_span": "log med interesse, kunnskap og erfaring om nærværs- og kroppsorientert metoder for å leve et rikere og dypere liv.\nSenter for værekraft DA\nOrg.nummer 935 055 229",
       "source_url": "https://vaerekraft.as/"
+    },
+    {
+      "organisation_number": "885621252",
+      "name": "EIKA BOLIGKREDITT AS",
+      "registry_website": "www.eikbol.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.eikbol.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.eikbol.no"
     },
     {
       "organisation_number": "932963310",
@@ -971,17 +993,6 @@
       "source_url": "https://www.sso.no"
     },
     {
-      "organisation_number": "875612972",
-      "name": "FAGFORBUNDET SKIEN - SILJAN AVD 024",
-      "registry_website": "www.fagforbundet.no/fagforeninger/telemark/avd024/",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://www.fagforbundet.no/fagforeninger/telemark/avd024/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "Organisasjonsnummer : 875612972\nHei, jeg er Fagforbundets chatbot. Hva kan jeg hjelpe med?",
-      "source_url": "https://www.fagforbundet.no/fagforeninger/telemark/avd024/"
-    },
-    {
       "organisation_number": "992114169",
       "name": "BANKGÅRDEN LEGEKONTOR AS",
       "registry_website": "banklege.no/",
@@ -991,6 +1002,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://banklege.no/"
+    },
+    {
+      "organisation_number": "875612972",
+      "name": "FAGFORBUNDET SKIEN - SILJAN AVD 024",
+      "registry_website": "www.fagforbundet.no/fagforeninger/telemark/avd024/",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://www.fagforbundet.no/fagforeninger/telemark/avd024/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "Organisasjonsnummer : 875612972\nHei, jeg er Fagforbundets chatbot. Hva kan jeg hjelpe med?",
+      "source_url": "https://www.fagforbundet.no/fagforeninger/telemark/avd024/"
     },
     {
       "organisation_number": "992453605",
@@ -1004,17 +1026,6 @@
       "source_url": "https://www.stavangerpk.no"
     },
     {
-      "organisation_number": "916086830",
-      "name": "FOLIERING & DETAILING SENTER AS",
-      "registry_website": "www.fds.as",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://www.fds.as/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "Foliering & Detailing Senter AS\nOrg.nr. 916 086 830\nAdresse\nMicheletveien 54\n1053 Oslo\nÅpningstider\nMa-fre:  09-17\nLør: 10-14\nSøn: Etter avtale.",
-      "source_url": "https://www.fds.as"
-    },
-    {
       "organisation_number": "974423774",
       "name": "ELEKTRO COMFORT AS",
       "registry_website": "www.el-c.no",
@@ -1024,6 +1035,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.el-c.no"
+    },
+    {
+      "organisation_number": "916086830",
+      "name": "FOLIERING & DETAILING SENTER AS",
+      "registry_website": "www.fds.as",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://www.fds.as/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "Foliering & Detailing Senter AS\nOrg.nr. 916 086 830\nAdresse\nMicheletveien 54\n1053 Oslo\nÅpningstider\nMa-fre:  09-17\nLør: 10-14\nSøn: Etter avtale.",
+      "source_url": "https://www.fds.as"
     },
     {
       "organisation_number": "921173938",
@@ -1048,17 +1070,6 @@
       "source_url": "https://www.nordlandtraktor.no"
     },
     {
-      "organisation_number": "928251985",
-      "name": "BYE BERG ELEKTRO AS",
-      "registry_website": "www.byebergelektro.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.byebergelektro.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.byebergelektro.no"
-    },
-    {
       "organisation_number": "984027109",
       "name": "BERGEN SQUASH KLUBB",
       "registry_website": "bergensquashklubb.no/",
@@ -1068,17 +1079,6 @@
       "method": "identity_gate_verified_v1:registry_website",
       "claim_span": "UBB? Grasrotandelen gir deg som spiller mulighet til å bestemme hvem som skal motta noe av overskuddet til Norsk Tipping. Vårt organisasjonsnummer er 984027109.",
       "source_url": "https://bergensquashklubb.no/"
-    },
-    {
-      "organisation_number": "925145645",
-      "name": "UTVENDIG RENHOLD AS",
-      "registry_website": "utvendigrenhold.no",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://utvendigrenhold.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "ørste byene i Norge! Vi vasker i Rogaland, Sørlandet, Drammen og Vestfold, Oslo, Bergen, Innlandet, Østfold og Trondheim!\nUtvendig Renhold AS org nr. 925 145 645 Postadresse Narviga 10, 4633 Kristiansand Telefon 38363338 / Åpningstider man – fred 09:00-16:00 Generellpost@utvendigrenhold.no Regnskapfaktura@utve",
-      "source_url": "https://utvendigrenhold.no"
     },
     {
       "organisation_number": "883971752",
@@ -1092,6 +1092,28 @@
       "source_url": "https://www.sunnaas.no/"
     },
     {
+      "organisation_number": "925145645",
+      "name": "UTVENDIG RENHOLD AS",
+      "registry_website": "utvendigrenhold.no",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://utvendigrenhold.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "ørste byene i Norge! Vi vasker i Rogaland, Sørlandet, Drammen og Vestfold, Oslo, Bergen, Innlandet, Østfold og Trondheim!\nUtvendig Renhold AS org nr. 925 145 645 Postadresse Narviga 10, 4633 Kristiansand Telefon 38363338 / Åpningstider man – fred 09:00-16:00 Generellpost@utvendigrenhold.no Regnskapfaktura@utve",
+      "source_url": "https://utvendigrenhold.no"
+    },
+    {
+      "organisation_number": "928251985",
+      "name": "BYE BERG ELEKTRO AS",
+      "registry_website": "www.byebergelektro.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.byebergelektro.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.byebergelektro.no"
+    },
+    {
       "organisation_number": "912550206",
       "name": "KELDA DYNAMICS AS",
       "registry_website": "www.kelda.no",
@@ -1103,17 +1125,6 @@
       "source_url": "https://www.kelda.no"
     },
     {
-      "organisation_number": "945855185",
-      "name": "Østerlie Kunst og Farve A/S",
-      "registry_website": "www.osterlie.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://osterlie.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.osterlie.no"
-    },
-    {
       "organisation_number": "996222160",
       "name": "MYRA BLOMST AS",
       "registry_website": "www.myrablomst.no",
@@ -1123,6 +1134,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.myrablomst.no"
+    },
+    {
+      "organisation_number": "945855185",
+      "name": "Østerlie Kunst og Farve A/S",
+      "registry_website": "www.osterlie.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://osterlie.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.osterlie.no"
     },
     {
       "organisation_number": "914787424",
@@ -1147,6 +1169,17 @@
       "source_url": "https://www.norronafly.com"
     },
     {
+      "organisation_number": "929460898",
+      "name": "ASKER KVINNEHELSE AS",
+      "registry_website": "www.askerkvinnehelse.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.askerkvinnehelse.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.askerkvinnehelse.no"
+    },
+    {
       "organisation_number": "993763853",
       "name": "NORSK SCHÄFERHUND KLUB, AVD. OSLO",
       "registry_website": "www.norskschaeferhundoslo.com",
@@ -1156,17 +1189,6 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.norskschaeferhundoslo.com"
-    },
-    {
-      "organisation_number": "847353732",
-      "name": "INSTITUTT FOR FREDSFORSKNING STI",
-      "registry_website": "www.prio.org",
-      "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://www.prio.org/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "requirements for both methods follow below.\nEHF invoices\nThe address for invoices on EHF-format is Institutt for Fredsforskning, organisation number: 847353732.\nIf a vendor does not have in place its own system for issuing invoices on the EHF-format, it is possible to benefit from services available at a num",
-      "source_url": "https://www.prio.org"
     },
     {
       "organisation_number": "989371770",
@@ -1180,15 +1202,15 @@
       "source_url": "https://www.la1g.no"
     },
     {
-      "organisation_number": "983105475",
-      "name": "FOTOGRAF NICKI TWANG",
-      "registry_website": "www.twang.no",
+      "organisation_number": "847353732",
+      "name": "INSTITUTT FOR FREDSFORSKNING STI",
+      "registry_website": "www.prio.org",
       "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.twang.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.twang.no"
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://www.prio.org/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "requirements for both methods follow below.\nEHF invoices\nThe address for invoices on EHF-format is Institutt for Fredsforskning, organisation number: 847353732.\nIf a vendor does not have in place its own system for issuing invoices on the EHF-format, it is possible to benefit from services available at a num",
+      "source_url": "https://www.prio.org"
     },
     {
       "organisation_number": "995684926",
@@ -1200,6 +1222,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.codex.no"
+    },
+    {
+      "organisation_number": "983105475",
+      "name": "FOTOGRAF NICKI TWANG",
+      "registry_website": "www.twang.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.twang.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.twang.no"
     },
     {
       "organisation_number": "886181132",
@@ -1224,17 +1257,6 @@
       "source_url": "https://www.theaandenaes.com"
     },
     {
-      "organisation_number": "871340692",
-      "name": "IDRETTSRÅDET STAVANGER",
-      "registry_website": "www.idrettsraadet.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://idrettsraadet.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.idrettsraadet.no"
-    },
-    {
       "organisation_number": "982075467",
       "name": "BØNES BASKETBALLKLUBB",
       "registry_website": "www.bonesbasket.no",
@@ -1255,6 +1277,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.devoldconsulting.no"
+    },
+    {
+      "organisation_number": "871340692",
+      "name": "IDRETTSRÅDET STAVANGER",
+      "registry_website": "www.idrettsraadet.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://idrettsraadet.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.idrettsraadet.no"
     },
     {
       "organisation_number": "944716904",
@@ -1356,17 +1389,6 @@
       "source_url": "https://www.gramo.no"
     },
     {
-      "organisation_number": "971541288",
-      "name": "STIFTELSEN ASKELADDEN STEINERBARNEHAGE",
-      "registry_website": "www.askeladdensteinerbarnehage.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.askeladdensteinerbarnehage.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://www.askeladdensteinerbarnehage.no"
-    },
-    {
       "organisation_number": "977085934",
       "name": "HJELPIS MOTOR-STALL Hans Petter Hjelpdahl",
       "registry_website": "WWW.HJELPIS.NO",
@@ -1376,6 +1398,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://WWW.HJELPIS.NO"
+    },
+    {
+      "organisation_number": "971541288",
+      "name": "STIFTELSEN ASKELADDEN STEINERBARNEHAGE",
+      "registry_website": "www.askeladdensteinerbarnehage.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.askeladdensteinerbarnehage.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.askeladdensteinerbarnehage.no"
     },
     {
       "organisation_number": "935647584",
@@ -1466,17 +1499,6 @@
       "source_url": "https://www.dans1.no"
     },
     {
-      "organisation_number": "971169486",
-      "name": "MIDT-NORSK BLOMSTERENGFRØ ANS",
-      "registry_website": "blomsterengfro.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.blomsterengfro.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://blomsterengfro.no"
-    },
-    {
       "organisation_number": "961099013",
       "name": "NAMSOS FRITID AS",
       "registry_website": "www.namsosfritid.no",
@@ -1499,15 +1521,15 @@
       "source_url": "https://oslo-rentals.webnode.page"
     },
     {
-      "organisation_number": "814878112",
-      "name": "TLV VARMEPUMPER AS",
-      "registry_website": "www.tlv.no",
+      "organisation_number": "971169486",
+      "name": "MIDT-NORSK BLOMSTERENGFRØ ANS",
+      "registry_website": "blomsterengfro.no",
       "state": "available",
       "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://tlv.no/",
+      "published_url": "https://www.blomsterengfro.no/",
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
-      "source_url": "https://www.tlv.no"
+      "source_url": "https://blomsterengfro.no"
     },
     {
       "organisation_number": "922043752",
@@ -1519,6 +1541,17 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.fus.no/salbutangen"
+    },
+    {
+      "organisation_number": "814878112",
+      "name": "TLV VARMEPUMPER AS",
+      "registry_website": "www.tlv.no",
+      "state": "available",
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://tlv.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://www.tlv.no"
     },
     {
       "organisation_number": "987270233",
@@ -1554,6 +1587,17 @@
       "source_url": "https://gausdalhistorielag.no"
     },
     {
+      "organisation_number": "933276538",
+      "name": "FORSVAR FOLKERETTEN",
+      "registry_website": "www.forsvarfolkeretten.no/",
+      "state": "available",
+      "reason": "verified_by_organisation_number",
+      "published_url": "https://forsvarfolkeretten.no/",
+      "method": "identity_gate_verified_v1:registry_website",
+      "claim_span": "Send oss gjerne et bidrag – stort eller lite – til «Forsvar folkeretten»: \nVIPPS #929497\nBankkonto: 1254.64.09234 (Cultura Bank)\nOrganisasjonsnummer:\n933 276 538.",
+      "source_url": "https://www.forsvarfolkeretten.no/"
+    },
+    {
       "organisation_number": "927173387",
       "name": "FRØYLAND VINDU AS",
       "registry_website": "www.froyland.no",
@@ -1563,17 +1607,6 @@
       "method": "identity_gate_corroborated_v1:registry_website",
       "claim_span": null,
       "source_url": "https://www.froyland.no"
-    },
-    {
-      "organisation_number": "980381587",
-      "name": "NORSK BYGGSERVICE AS",
-      "registry_website": "norsk-byggservice.no",
-      "state": "available",
-      "reason": "corroborated_by_name_and_address_or_phone",
-      "published_url": "https://www.norsk-byggservice.no/",
-      "method": "identity_gate_corroborated_v1:registry_website",
-      "claim_span": null,
-      "source_url": "https://norsk-byggservice.no"
     },
     {
       "organisation_number": "916611838",
@@ -1587,15 +1620,15 @@
       "source_url": "https://www.borgasfalt.no"
     },
     {
-      "organisation_number": "933276538",
-      "name": "FORSVAR FOLKERETTEN",
-      "registry_website": "www.forsvarfolkeretten.no/",
+      "organisation_number": "980381587",
+      "name": "NORSK BYGGSERVICE AS",
+      "registry_website": "norsk-byggservice.no",
       "state": "available",
-      "reason": "verified_by_organisation_number",
-      "published_url": "https://forsvarfolkeretten.no/",
-      "method": "identity_gate_verified_v1:registry_website",
-      "claim_span": "Send oss gjerne et bidrag – stort eller lite – til «Forsvar folkeretten»: \nVIPPS #929497\nBankkonto: 1254.64.09234 (Cultura Bank)\nOrganisasjonsnummer:\n933 276 538.",
-      "source_url": "https://www.forsvarfolkeretten.no/"
+      "reason": "corroborated_by_name_and_address_or_phone",
+      "published_url": "https://www.norsk-byggservice.no/",
+      "method": "identity_gate_corroborated_v1:registry_website",
+      "claim_span": null,
+      "source_url": "https://norsk-byggservice.no"
     },
     {
       "organisation_number": "913027922",
